@@ -1,0 +1,17 @@
+requests==2.31.0
+python-dotenv~=1.0.0
+pydantic~=2.7.0
+fastapi~=0.109.0
+sqlalchemy~=2.0.25
+environs~=9.5.0
+uvicorn
+alembic
+psycopg2-binary
+aio_pika
+apscheduler
+# alembic init alembic
+# alembic revision --autogenerate -m "create tables"
+# alembic upgrade head
+
+# uvicorn main:app --host 0.0.0.0 --port 8000
+paramiko
