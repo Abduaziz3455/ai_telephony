@@ -2,9 +2,9 @@ import asyncio
 import logging
 import subprocess
 import sys
-import time
 from datetime import datetime
 
+from environs import Env
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import Session
 
@@ -12,10 +12,7 @@ from db.call_crud import get_call, update_call
 from db.campaign_crud import update_campaign, get_campaign, get_status, update_status
 from db.gateway_crud import create_gateway, get_gateway, invalid_gateways
 from db.models import Campaign, Gateway, CallHistory
-from pika_client import PikaClient
 from schemas.input_query import CallUpdate, ChannelCreate, CampaignUpdate, ChannelStatus
-from environs import Env
-
 from ssh_command import ssh_connect_B
 
 env = Env()
@@ -23,27 +20,6 @@ env.read_env()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     handlers=[logging.StreamHandler(sys.stdout)])
-
-
-def log_incoming_message(cls, message: dict):
-    """Method to do something meaningful with the incoming message"""
-    logging.info('Here we got incoming message %s', message)
-
-
-pika_client = PikaClient(log_incoming_message, env.str("CALL_QUEUE"))
-pika_channel = PikaClient(log_incoming_message, env.str("SIP_QUEUE"))
-
-
-async def send_channel_status(channel: ChannelStatus):
-    await pika_channel.send_message(channel.dict())
-
-
-async def send_call_update(call: CallUpdate):
-    await pika_client.send_message(call.dict())
-
-
-async def send_campaign_update(campaign: CampaignUpdate):
-    await pika_client.send_message(campaign.dict())
 
 
 def get_duration(audioPath: str):
@@ -63,12 +39,11 @@ def get_duration(audioPath: str):
 async def update_and_send(db, call, message, status, recording=None, duration=None):
     call.status = status
     update_call(db, call, recording, duration)
-    message.status = status
-    if recording:
-        message.audio = f"{env.str('BASE_URL')}{recording}"
-    if duration:
-        message.duration = duration
-    await send_call_update(message)
+    # message.status = status
+    # if recording:
+    #     message.audio = f"{env.str('BASE_URL')}{recording}"
+    # if duration:
+    #     message.duration = duration
 
 
 async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, number: str, audioPath: str,
@@ -81,13 +56,8 @@ async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, nu
             if is_work_time():
                 status = get_status(db)
                 db.refresh(status)
-                print("Reload status: ", status.reloadStatus)
                 print("Call active: ", status.call_active)
-                if status.reloadStatus:
-                    update_status(db, status)
-                    ssh_connect_B(command)
-                else:
-                    process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 call.status = "RINGING"
                 call.startDate = datetime.now()
                 update_call(db, call)
@@ -95,7 +65,6 @@ async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, nu
                 message = CallUpdate(callUUID=UUID, campaignUUID=call.campaign_uuid,
                                      startDate=call.startDate.strftime('%Y-%m-%d %H:%M:%S'), status=call.status,
                                      channelUUID=gateway.uuid)
-                await send_call_update(message)
 
                 time_count = 0
 
@@ -126,7 +95,6 @@ async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, nu
                 camp = get_campaign(db, call.campaign_uuid)
                 update_campaign(db, camp, 'PAUSED')
                 campaign = CampaignUpdate(uuid=call.campaign_uuid, status='PAUSED')
-                await send_campaign_update(campaign)
     except subprocess.TimeoutExpired:
         print("Command execution timed out.")
         return "timeout"  # Handle timeout
@@ -140,19 +108,12 @@ async def add_gateway(db: Session, query: ChannelCreate):
     create_gateway(db, name=query.name, username=query.username, password=query.password,
                    endpoint=query.endpoint, active=False, uuid=query.uuid, channelCount=query.channelCount)
     try:
-        # count = 0
         while True:
             a_active = await check_calls(db)
-            b_active = await check_calls(db, B_point=True)
             print("a_point: ", a_active)
-            print("b_point: ", b_active)
 
-            status = get_status(db)
             sip = get_gateway(db, query.uuid)
             if not a_active:
-                # count += 1
-                # # Execute the command
-                # if count == 1:
                 command = f'fs_cli -x "luarun add_gateway.lua {query.uuid} {query.endpoint} {query.username} {query.password}"'
                 process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 await process.communicate()
@@ -162,27 +123,7 @@ async def add_gateway(db: Session, query: ChannelCreate):
                 message = ChannelStatus(uuid=sip.uuid, active=sip.active)
                 print(f"SIP UUID: ***{message.uuid}***")
                 print(f"SIP ACTIVE: ***{message.active}***")
-                await send_channel_status(message)
-                print("Statusni reload qilish False ga o'tdi")
-                status.reloadStatus = False
-                update_status(db, status)
                 break
-            else:
-                print("Statusni reload qilish TRUE ga o'tdi")
-                status.reloadStatus = True
-                update_status(db, status)
-                await asyncio.sleep(5)
-
-        while True:
-            b_active = await check_calls(db, B_point=True)
-            if not b_active:
-                if sip.active:
-                    command1 = f'fs_cli -x "reloadxml"'
-                    command2 = f'fs_cli -x "reload mod_sofia"'
-                    ssh_connect_B(command1, command2)
-                break
-            else:
-                await asyncio.sleep(5)
 
     except Exception as e:
         # Log the exception if any
@@ -317,14 +258,12 @@ async def continue_campaign(db, send_campaign_update, retry_main_call, start=Fal
             break
 
 
-async def pause_campaign(db, campaign_uuid, send_campaign_update):
+async def pause_campaign(db, campaign_uuid):
     campaign = get_campaign(db, campaign_uuid)
-    campaign = update_campaign(db, campaign, 'PAUSED')
-    message = CampaignUpdate(uuid=campaign.uuid, status=campaign.status)
-    await send_campaign_update(message)
+    update_campaign(db, campaign, 'PAUSED')
 
 
-async def resume_campaign(db, campaign_uuid, send_campaign_update, retry_main_call):
+async def resume_campaign(db, campaign_uuid, retry_main_call):
     campaign = get_campaign(db, campaign_uuid)
     gateway = get_gateway(db, campaign.gateway_uuid)
     channels = empty_channels(db, gateway, campaign)
@@ -332,11 +271,7 @@ async def resume_campaign(db, campaign_uuid, send_campaign_update, retry_main_ca
         campaign.status = 'IN_PROGRESS'
         campaign.channelCount = channels
         campaign = update_campaign(db, campaign)
-        message = CampaignUpdate(uuid=campaign.uuid, status=campaign.status)
-        await send_campaign_update(message)
         await retry_main_call(db, campaign)
     else:
         camp_status = 'BUSY'
         update_campaign(db, campaign, camp_status)
-        message = CampaignUpdate(uuid=campaign.uuid, status=camp_status)
-        await send_campaign_update(message)

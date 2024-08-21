@@ -9,33 +9,26 @@ from environs import Env
 from fastapi import APIRouter, BackgroundTasks, Request, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, or_
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from db.call_crud import bulk_create_call, get_call, cancel_calls, get_call_history
 from db.campaign_crud import create_campaign, update_campaign, get_campaign
-from db.gateway_crud import delete_gateway, get_gateway
+from db.gateway_crud import get_gateway
 from db.models import CallHistory, Campaign, CampaignStatus, CallStatus
 from db.session import get_db
-from pika_client import PikaClient
-from schemas.input_query import CampaignInput, CampaignUpdate, ChannelCreate, CampaignCountResponse, \
+from schemas.input_query import CampaignInput, ChannelCreate, CampaignCountResponse, \
     ActiveCampaignResponse
-from script import add_gateway, call_number, cancel_campaign, empty_channels, continue_campaign, pause_campaign, \
-    resume_campaign, get_duration, is_work_time, send_campaign_update
+from script import add_gateway, call_number, cancel_campaign, empty_channels, pause_campaign, \
+    resume_campaign, get_duration, is_work_time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     handlers=[logging.StreamHandler(sys.stdout)])
 
 
-def log_incoming_message(cls, message: dict):
-    """Method to do something meaningful with the incoming message"""
-    logging.info('Here we got incoming message %s', message)
-
-
 env = Env()
 env.read_env()
 router = APIRouter()
-pika_client = PikaClient(log_incoming_message, env.str("CAMPAIGN_QUEUE"))
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -115,9 +108,6 @@ async def main_call(query, db, gateway, campaign, audio_path):
     else:
         camp_status = 'CANCELLED'
     update_campaign(db, campaign, camp_status, endDate=end_date_var)
-    message = CampaignUpdate(uuid=campaign.uuid, status=camp_status,
-                             startDate=campaign.startDate.strftime('%Y-%m-%d %H:%M:%S'), endDate=end_date_var)
-    await send_campaign_update(message)
 
 
 async def retry_main_call(db, campaign: Campaign):
@@ -177,9 +167,6 @@ async def retry_main_call(db, campaign: Campaign):
     else:
         camp_status = 'CANCELLED'
     update_campaign(db, campaign, camp_status, endDate=end_date_var)
-    message = CampaignUpdate(uuid=campaign.uuid, status=camp_status,
-                             startDate=campaign.startDate.strftime('%Y-%m-%d %H:%M:%S'), endDate=end_date_var)
-    await send_campaign_update(message)
 
 
 async def send_response(db, query, audio_path: str, sips: list):
@@ -206,17 +193,12 @@ async def send_response(db, query, audio_path: str, sips: list):
             campaign.channelCount = query.channelCount
             campaign = update_campaign(db, campaign)
             await main_call(query, db, gateway, campaign, audio_path)
-            await continue_campaign(db, send_campaign_update, retry_main_call)
         else:
             camp_status = 'BUSY'
             update_campaign(db, campaign, camp_status)
-            message = CampaignUpdate(uuid=campaign.uuid, status=camp_status)
-            await send_campaign_update(message)
     else:
         camp_status = 'PAUSED'
         update_campaign(db, campaign, camp_status)
-        message = CampaignUpdate(uuid=campaign.uuid, status=camp_status)
-        await send_campaign_update(message)
 
 
 @router.post("/campaign")
@@ -264,7 +246,7 @@ async def send_message(uuid: str, background_tasks: BackgroundTasks, db: Session
     try:
         campaign = get_campaign(db, uuid)
         if campaign:
-            background_tasks.add_task(pause_campaign, db, uuid, send_campaign_update)
+            background_tasks.add_task(pause_campaign, db, uuid)
             return JSONResponse(status_code=200,
                                 content={"message": "Campaign muvaffaqiyatli to'xtatildi!", "status": 200})
         else:
@@ -280,7 +262,7 @@ async def send_message(uuid: str, background_tasks: BackgroundTasks, db: Session
     try:
         campaign = get_campaign(db, uuid)
         if campaign:
-            background_tasks.add_task(resume_campaign, db, uuid, send_campaign_update, retry_main_call)
+            background_tasks.add_task(resume_campaign, db, uuid, retry_main_call)
             return JSONResponse(status_code=200,
                                 content={"message": "Campaign muvaffaqiyatli davom ettirildi!", "status": 200})
         else:
