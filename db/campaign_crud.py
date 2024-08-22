@@ -14,10 +14,10 @@ def get_campaign(db: Session, uuid: str):
     return db.query(Campaign).filter(Campaign.uuid == uuid).first()
 
 
-def create_campaign(db: Session, uuid: str, name: str, audio: str, channelCount: int, gateway_uuid: str, duration: int = None,
+def create_campaign(db: Session, uuid: str, name: str, audio: str, channelCount: int, sip_uuid: str, duration: int = None,
                     retryCount: int = 0):
     db_camp = Campaign(uuid=uuid, name=name, audio=audio, retryCount=retryCount, channelCount=channelCount,
-                       gateway_uuid=gateway_uuid, audio_duration=duration)
+                       sip_uuid=sip_uuid, audio_duration=duration)
     try:
         db.add(db_camp)
         db.commit()

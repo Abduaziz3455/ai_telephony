@@ -4,9 +4,9 @@ from pydantic import BaseModel, constr
 
 
 class ChannelCreate(BaseModel):
-    uuid: str
-    name: str = "gateway_name"
-    endpoint: str = '192.168.1.0'
+    uuid: str = "uztel"
+    name: str = "uztel"
+    endpoint: str = '217.29.116.183'
     username: str = '781131202'
     password: str = 'password'
     channelCount: int = 1
@@ -22,11 +22,11 @@ class CallInput(BaseModel):
 
 class CampaignInput(BaseModel):
     uuid: str = '00000000-0000-0000-0000-000000000000'
-    name: str = 'uysot Reklamasi'
+    name: str = 'Debt notice'
     targets: List[CallInput]
     audio: str = 'https://storage.yandexcloud.net/myaudios/azizzzz.wav'
-    retryCount: int = 1
-    channels: List[str]
+    retryCount: int = 3
+    sip_uuid: str = 'uztel'
     channelCount: int = 1
 
     class Config:
@@ -36,7 +36,7 @@ class CampaignInput(BaseModel):
 class CallCreate(BaseModel):
     uuid: str = '00000000-0000-0000-0000-000000000000'
     callUUID: str = '00000000-0000-0000-0000-000000000000'
-    gateway_id: int
+    sip_id: int
     campaign_uuid: int
     phone: str
     status: str = 'PENDING'

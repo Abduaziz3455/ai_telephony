@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 
 from db.call_crud import get_call, update_call
 from db.campaign_crud import update_campaign, get_campaign
-from db.gateway_crud import create_gateway, get_gateway, invalid_gateways
-from db.models import Campaign, Gateway, CallHistory
+from db.sip_crud import create_sip, get_sip, invalid_sips
+from db.models import Campaign, Sip, CallHistory
 from schemas.input_query import ChannelCreate, CampaignUpdate, ChannelStatus
 
 env = Env()
@@ -45,10 +45,10 @@ async def update_and_send(db, call, status, recording=None, duration=None):
     #     message.duration = duration
 
 
-async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, number: str, audioPath: str,
+async def call_number(db: Session, sip: ChannelCreate, call: CallHistory, number: str, audioPath: str,
                       retryTime: int, UUID: str):
     # Construct the command
-    command = f'fs_cli -x "luarun call_number.lua {gateway.uuid} {gateway.username} {number} {audioPath} {retryTime} {UUID}"'
+    command = f'fs_cli -x "luarun call_number.lua {sip.uuid} {sip.username} {number} {audioPath} {retryTime} {UUID}"'
     try:
         if call.status.value == 'PENDING':
             # Execute the command and capture the output
@@ -93,14 +93,14 @@ async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, nu
         return "error"  # Handle any other errors
 
 
-async def add_gateway(db: Session, query: ChannelCreate):
+async def add_sip(db: Session, query: ChannelCreate):
     # Construct the command to run the Lua script with FreeSWITCH
-    create_gateway(db, name=query.name, username=query.username, password=query.password,
-                   endpoint=query.endpoint, active=False, uuid=query.uuid, channelCount=query.channelCount)
+    create_sip(db, name=query.name, username=query.username, password=query.password, endpoint=query.endpoint,
+               active=False, uuid=query.uuid, channelCount=query.channelCount)
     try:
         while True:
-            sip = get_gateway(db, query.uuid)
-            command = f'fs_cli -x "luarun add_gateway.lua {query.uuid} {query.endpoint} {query.username} {query.password}"'
+            sip = get_sip(db, query.uuid)
+            command = f'fs_cli -x "luarun add_sip.lua {query.uuid} {query.endpoint} {query.username} {query.password}"'
             process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             await process.communicate()
             # Adding a delay to ensure the command execution completes
@@ -117,12 +117,12 @@ async def add_gateway(db: Session, query: ChannelCreate):
         return None
 
 
-async def check_gateway(db: Session):
-    command = 'fs_cli -x "luarun check_gateway.lua"'
+async def check_sip(db: Session):
+    command = 'fs_cli -x "luarun check_sip.lua"'
     try:
         process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         await process.communicate()
-        false_sips = invalid_gateways(db)
+        false_sips = invalid_sips(db)
         return false_sips
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -150,21 +150,21 @@ def cancel_campaign(db: Session, uuid: str):
         return False
 
 
-def empty_channels(db: Session, gateway: Gateway, campaign: Campaign):
+def empty_channels(db: Session, sip: Sip, campaign: Campaign):
     # busy channels count
     query = select(func.sum(Campaign.channelCount)).where(
         and_(
             Campaign.status == 'IN_PROGRESS',
-            Campaign.gateway_uuid == gateway.uuid
+            Campaign.sip_uuid == sip.uuid
         )
     )
     busy_channel = db.execute(query).scalar()
     busy_channel = busy_channel if busy_channel else 0
-    empty_channel = gateway.channelCount - busy_channel
-    print("Empty channels: ", empty_channel)
-    print("Busy channels: ", busy_channel)
-    print("Gateway channels: ", gateway.channelCount)
-    print('Campaign channel count', campaign.channelCount)
+    empty_channel = sip.channelCount - busy_channel
+    # print("Empty channels: ", empty_channel)
+    # print("Busy channels: ", busy_channel)
+    # print("Sip channels: ", sip.channelCount)
+    # print('Campaign channel count', campaign.channelCount)
     if campaign.channelCount <= empty_channel:
         return campaign.channelCount
     else:
@@ -204,8 +204,8 @@ async def continue_campaign(db, send_campaign_update, retry_main_call, start=Fal
         if new_camp:
             if is_work_time():
                 print("New Campaign: ", new_camp)
-                gateway = get_gateway(db, new_camp.gateway_uuid)
-                channels = empty_channels(db, gateway, new_camp)
+                sip = get_sip(db, new_camp.sip_uuid)
+                channels = empty_channels(db, sip, new_camp)
                 if channels >= 1:
                     await asyncio.sleep(7)
                     new_camp.status = 'IN_PROGRESS'
@@ -236,8 +236,8 @@ async def pause_campaign(db, campaign_uuid):
 
 async def resume_campaign(db, campaign_uuid, retry_main_call):
     campaign = get_campaign(db, campaign_uuid)
-    gateway = get_gateway(db, campaign.gateway_uuid)
-    channels = empty_channels(db, gateway, campaign)
+    sip = get_sip(db, campaign.sip_uuid)
+    channels = empty_channels(db, sip, campaign)
     if channels >= 1:
         campaign.status = 'IN_PROGRESS'
         campaign.channelCount = channels

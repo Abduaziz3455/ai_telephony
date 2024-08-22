@@ -1,7 +1,5 @@
-import asyncio
 import logging
 import sys
-from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 from sqlalchemy import and_
@@ -19,8 +17,8 @@ def get_call(db: Session, uuid: str):
     return db.query(CallHistory).filter(CallHistory.uuid == uuid).first()
 
 
-def create_call(db: Session, uuid: str, gateway_id: int, campaign_uuid: str, phone: str):
-    db_call = CallHistory(uuid=uuid, gateway_id=gateway_id, campaign_uuid=campaign_uuid, phone=phone)
+def create_call(db: Session, uuid: str, sip_id: int, campaign_uuid: str, phone: str):
+    db_call = CallHistory(uuid=uuid, sip_id=sip_id, campaign_uuid=campaign_uuid, phone=phone)
     try:
         db.add(db_call)
         db.commit()

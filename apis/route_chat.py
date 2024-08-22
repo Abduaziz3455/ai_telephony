@@ -14,12 +14,12 @@ from sqlalchemy.orm import Session
 
 from db.call_crud import bulk_create_call, get_call, cancel_calls, get_call_history
 from db.campaign_crud import create_campaign, update_campaign, get_campaign
-from db.gateway_crud import get_gateway
+from db.sip_crud import get_sip
 from db.models import CallHistory, Campaign, CampaignStatus, CallStatus
 from db.session import get_db
 from schemas.input_query import CampaignInput, ChannelCreate, CampaignCountResponse, \
     ActiveCampaignResponse
-from script import add_gateway, call_number, cancel_campaign, empty_channels, pause_campaign, \
+from script import add_sip, call_number, cancel_campaign, empty_channels, pause_campaign, \
     resume_campaign, get_duration, is_work_time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -55,7 +55,7 @@ def save_to_file(audio_url, file_path: str):
         return False
 
 
-async def call_concurrent(query, db, gateway, campaign, audio_path):
+async def call_concurrent(query, db, sip, campaign, audio_path):
     tasks = []
     semaphore = asyncio.Semaphore(query.channelCount)
 
@@ -64,7 +64,7 @@ async def call_concurrent(query, db, gateway, campaign, audio_path):
             db_call = get_call(db, callinfo.callUUID)
             db.refresh(campaign)
             if campaign.status.value == 'IN_PROGRESS':
-                await call_number(db, gateway, db_call, callinfo.phone, audio_path, query.retryCount, callinfo.callUUID)
+                await call_number(db, sip, db_call, callinfo.phone, audio_path, query.retryCount, callinfo.callUUID)
             elif campaign.status.value == 'PAUSED':
                 break
             else:
@@ -76,7 +76,7 @@ async def call_concurrent(query, db, gateway, campaign, audio_path):
             db_call = get_call(db, callinfo.callUUID)
             db.refresh(campaign)
             if campaign.status.value == 'IN_PROGRESS':
-                await call_number(db, gateway, db_call, callinfo.phone, audio_path, query.retryCount, callinfo.callUUID)
+                await call_number(db, sip, db_call, callinfo.phone, audio_path, query.retryCount, callinfo.callUUID)
             else:
                 cancel_calls(db, campaign.uuid)
 
@@ -97,8 +97,8 @@ async def call_concurrent(query, db, gateway, campaign, audio_path):
             await asyncio.gather(*tasks)
 
 
-async def main_call(query, db, gateway, campaign, audio_path):
-    await call_concurrent(query, db, gateway, campaign, audio_path)
+async def main_call(query, db, sip, campaign, audio_path):
+    await call_concurrent(query, db, sip, campaign, audio_path)
     db.refresh(campaign)
     end_date_var = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if campaign.status.value == 'IN_PROGRESS':
@@ -114,7 +114,7 @@ async def retry_main_call(db, campaign: Campaign):
     calls = get_call_history(campaign.uuid, db)
     retryCount = campaign.retryCount
     audio_path = campaign.audio
-    gateway = get_gateway(db, campaign.gateway_uuid)
+    sip = get_sip(db, campaign.sip_uuid)
     channelCount = campaign.channelCount
     tasks = []
 
@@ -124,7 +124,7 @@ async def retry_main_call(db, campaign: Campaign):
             db.refresh(campaign)
             if db_call.status.value == 'PENDING':
                 if campaign.status.value == 'IN_PROGRESS':
-                    await call_number(db, gateway, db_call, callinfo.phone, audio_path, retryCount, callinfo.callUUID)
+                    await call_number(db, sip, db_call, callinfo.phone, audio_path, retryCount, callinfo.callUUID)
                 elif campaign.status.value == 'PAUSED':
                     break
                 else:
@@ -136,7 +136,7 @@ async def retry_main_call(db, campaign: Campaign):
         db.refresh(campaign)
         if db_call.status.value == 'PENDING':
             if campaign.status.value == 'IN_PROGRESS':
-                await call_number(db, gateway, db_call, callinfo.phone, audio_path, retryCount, callinfo.callUUID)
+                await call_number(db, sip, db_call, callinfo.phone, audio_path, retryCount, callinfo.callUUID)
             else:
                 cancel_calls(db, campaign.uuid)
 
@@ -169,30 +169,29 @@ async def retry_main_call(db, campaign: Campaign):
     update_campaign(db, campaign, camp_status, endDate=end_date_var)
 
 
-async def send_response(db, query, audio_path: str, sips: list):
-    gateway = sips[0]
+async def send_response(db, query, audio_path: str, sip):
     duration = get_duration(audio_path)
     if duration:
         campaign = create_campaign(db=db, uuid=query.uuid, name=query.name, audio=audio_path, retryCount=query.retryCount,
-                                   channelCount=query.channelCount, gateway_uuid=gateway.uuid, duration=duration)
+                                   channelCount=query.channelCount, sip_uuid=sip.uuid, duration=duration)
     else:
         campaign = create_campaign(db=db, uuid=query.uuid, name=query.name, audio=audio_path,
                                    retryCount=query.retryCount,
-                                   channelCount=query.channelCount, gateway_uuid=gateway.uuid)
+                                   channelCount=query.channelCount, sip_uuid=sip.uuid)
     calls = []
     for k in query.targets:
-        calls.append(CallHistory(uuid=k.callUUID, gateway_id=gateway.id, campaign_uuid=campaign.uuid, phone=k.phone,
+        calls.append(CallHistory(uuid=k.callUUID, sip_id=sip.id, campaign_uuid=campaign.uuid, phone=k.phone,
                                  status='PENDING'))
     bulk_create_call(db, calls)
     if is_work_time():
-        query.channelCount = empty_channels(db, gateway, campaign)
+        query.channelCount = empty_channels(db, sip, campaign)
         print("Channel Count: " + str(query.channelCount))
         if query.channelCount > 0:
             campaign.status = 'IN_PROGRESS'
             campaign.startDate = datetime.now()
             campaign.channelCount = query.channelCount
             campaign = update_campaign(db, campaign)
-            await main_call(query, db, gateway, campaign, audio_path)
+            await main_call(query, db, sip, campaign, audio_path)
         else:
             camp_status = 'BUSY'
             update_campaign(db, campaign, camp_status)
@@ -203,25 +202,19 @@ async def send_response(db, query, audio_path: str, sips: list):
 
 @router.post("/campaign")
 async def send_message(query: CampaignInput, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    registered_sips = []
+    try:
+        sip = get_sip(db, query.sip_uuid)
+    except Exception as e:
+        return JSONResponse(status_code=500,
+                            content={"message": f"Campaign yaratishda xatolik: {str(e)}", "status": 500})
 
-    for sip in query.channels:
-        try:
-            gate = get_gateway(db, sip)
-            if gate:
-                if gate.active:
-                    registered_sips.append(gate)
-        except Exception as e:
-            return JSONResponse(status_code=500,
-                                content={"message": f"Campaign yaratishda xatolik: {str(e)}", "status": 500})
-
-    if registered_sips:
+    if sip and sip.active:
         # Save audio file, if required
         freeswitch_loc = env.str('AUDIO_LOC')
         audio_path = f"{freeswitch_loc}{query.uuid}.wav"
         audio_exists = save_to_file(query.audio, audio_path)
         if audio_exists:
-            background_tasks.add_task(send_response, db, query, audio_path, registered_sips)
+            background_tasks.add_task(send_response, db, query, audio_path, sip)
             return JSONResponse(status_code=200,
                                 content={"message": "Campaign muvaffaqiyatli yaratildi!", "status": 200})
         else:
@@ -231,10 +224,10 @@ async def send_message(query: CampaignInput, background_tasks: BackgroundTasks, 
         return JSONResponse(status_code=400, content={"message": "Sip user topilmadi!", "status": 400})
 
 
-@router.post("/channel")
+@router.post("/sip")
 async def send_message(query: ChannelCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
-        background_tasks.add_task(add_gateway, db, query)
+        background_tasks.add_task(add_sip, db, query)
         return JSONResponse(status_code=200, content={"message": "Sip muvaffaqiyatli yaratildi!", "status": 200})
     except Exception as e:
         return JSONResponse(status_code=500,

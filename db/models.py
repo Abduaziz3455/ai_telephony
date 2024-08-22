@@ -26,7 +26,7 @@ class CallStatus(Enum):
     CANCELLED = "CANCELLED"
 
 
-class Gateway(Base):
+class Sip(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String, unique=True, nullable=False, index=True)
     name = Column(String)
@@ -41,7 +41,7 @@ class Gateway(Base):
 class CallHistory(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String, unique=True)
-    gateway_id = Column(Integer, ForeignKey('gateway.id'))
+    sip_id = Column(Integer, ForeignKey('sip.id'))
     campaign_uuid = Column(String, ForeignKey('campaign.uuid'))
     phone = Column(String)
     status = Column(SqlEnum(CallStatus), nullable=False, default=CallStatus.RINGING)
@@ -61,4 +61,4 @@ class Campaign(Base):
     startDate = Column(DateTime(), nullable=True)
     endDate = Column(DateTime(), nullable=True)
     channelCount = Column(Integer, nullable=False)
-    gateway_uuid = Column(String, ForeignKey('gateway.uuid'))
+    sip_uuid = Column(String, ForeignKey('sip.uuid'))

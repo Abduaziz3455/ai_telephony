@@ -4,16 +4,16 @@ from datetime import timedelta
 from faker import Faker
 from sqlalchemy.orm import Session
 
-from db.models import Gateway, CampaignStatus, Campaign, CallHistory, CallStatus
+from db.models import Sip, CampaignStatus, Campaign, CallHistory, CallStatus
 from db.session import get_db
 
 fake = Faker()
 
 
 def create_fake_gateway():
-    return Gateway(uuid=fake.uuid4(), name=fake.company(), endpoint=fake.url(), username=fake.user_name(),
-                   password=fake.password(), channelCount=random.randint(1, 10), active=fake.boolean(),
-                   created_at=fake.date_time_this_year())
+    return Sip(uuid=fake.uuid4(), name=fake.company(), endpoint=fake.url(), username=fake.user_name(),
+               password=fake.password(), channelCount=random.randint(1, 10), active=fake.boolean(),
+               created_at=fake.date_time_this_year())
 
 
 def create_fake_campaign(gateway_uuid):
@@ -27,11 +27,11 @@ def create_fake_campaign(gateway_uuid):
                     audio_duration=random.randint(1, 600))
 
 
-def create_fake_callhistory(campaign_uuid, gateway_id):
+def create_fake_callhistory(campaign_uuid, sip_id):
     status = random.choice(list(CallStatus))
     start_date = fake.date_time_this_year()
     duration = random.randint(1, 600) if status == CallStatus.COMPLETED else None
-    return CallHistory(uuid=fake.uuid4(), gateway_id=gateway_id, campaign_uuid=campaign_uuid, phone=fake.phone_number(),
+    return CallHistory(uuid=fake.uuid4(), sip_id=sip_id, campaign_uuid=campaign_uuid, phone=fake.phone_number(),
                        status=status,
                        recording=fake.file_path(extension='wav') if status == CallStatus.COMPLETED else None,
                        duration=duration, startDate=start_date)
