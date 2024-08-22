@@ -7,8 +7,6 @@ environs~=9.5.0
 uvicorn
 alembic
 psycopg2-binary
-aio_pika
-apscheduler
 # alembic init alembic
 # alembic revision --autogenerate -m "create tables"
 # alembic upgrade head
