@@ -9,11 +9,10 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.orm import Session
 
 from db.call_crud import get_call, update_call
-from db.campaign_crud import update_campaign, get_campaign, get_status, update_status
+from db.campaign_crud import update_campaign, get_campaign
 from db.gateway_crud import create_gateway, get_gateway, invalid_gateways
 from db.models import Campaign, Gateway, CallHistory
-from schemas.input_query import CallUpdate, ChannelCreate, CampaignUpdate, ChannelStatus
-from ssh_command import ssh_connect_B
+from schemas.input_query import ChannelCreate, CampaignUpdate, ChannelStatus
 
 env = Env()
 env.read_env()
@@ -36,7 +35,7 @@ def get_duration(audioPath: str):
         return None
 
 
-async def update_and_send(db, call, message, status, recording=None, duration=None):
+async def update_and_send(db, call, status, recording=None, duration=None):
     call.status = status
     update_call(db, call, recording, duration)
     # message.status = status
@@ -54,17 +53,10 @@ async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, nu
         if call.status.value == 'PENDING':
             # Execute the command and capture the output
             if is_work_time():
-                status = get_status(db)
-                db.refresh(status)
-                print("Call active: ", status.call_active)
                 process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 call.status = "RINGING"
                 call.startDate = datetime.now()
                 update_call(db, call)
-
-                message = CallUpdate(callUUID=UUID, campaignUUID=call.campaign_uuid,
-                                     startDate=call.startDate.strftime('%Y-%m-%d %H:%M:%S'), status=call.status,
-                                     channelUUID=gateway.uuid)
 
                 time_count = 0
 
@@ -76,25 +68,23 @@ async def call_number(db: Session, gateway: ChannelCreate, call: CallHistory, nu
 
                     if call_status == 'RINGING':
                         if (time_count >= 30 and retryTime in [0, 1]) or (time_count >= 70 and retryTime >= 2):
-                            await update_and_send(db, call, message, 'DROPPED')
-                            update_status(db, status)
+                            await update_and_send(db, call, 'DROPPED')
                             break
                         time_count += 1
                         await asyncio.sleep(3)
                     elif call_status in ['COMPLETED', 'DROPPED', 'TERMINATED']:
                         recording = f"recordings/{UUID}.wav"
                         if call.duration:
-                            await update_and_send(db, call, message, call_status, recording, call.duration)
+                            await update_and_send(db, call, call_status, recording, call.duration)
                         else:
-                            await update_and_send(db, call, message, call_status, recording)
+                            await update_and_send(db, call, call_status, recording)
                         break
                     else:
-                        await update_and_send(db, call, message, 'MISSED')
+                        await update_and_send(db, call, 'MISSED')
                         break
             else:
                 camp = get_campaign(db, call.campaign_uuid)
                 update_campaign(db, camp, 'PAUSED')
-                campaign = CampaignUpdate(uuid=call.campaign_uuid, status='PAUSED')
     except subprocess.TimeoutExpired:
         print("Command execution timed out.")
         return "timeout"  # Handle timeout
@@ -109,21 +99,17 @@ async def add_gateway(db: Session, query: ChannelCreate):
                    endpoint=query.endpoint, active=False, uuid=query.uuid, channelCount=query.channelCount)
     try:
         while True:
-            a_active = await check_calls(db)
-            print("a_point: ", a_active)
-
             sip = get_gateway(db, query.uuid)
-            if not a_active:
-                command = f'fs_cli -x "luarun add_gateway.lua {query.uuid} {query.endpoint} {query.username} {query.password}"'
-                process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                await process.communicate()
-                # Adding a delay to ensure the command execution completes
-                await asyncio.sleep(5)
-                db.refresh(sip)
-                message = ChannelStatus(uuid=sip.uuid, active=sip.active)
-                print(f"SIP UUID: ***{message.uuid}***")
-                print(f"SIP ACTIVE: ***{message.active}***")
-                break
+            command = f'fs_cli -x "luarun add_gateway.lua {query.uuid} {query.endpoint} {query.username} {query.password}"'
+            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            await process.communicate()
+            # Adding a delay to ensure the command execution completes
+            await asyncio.sleep(5)
+            db.refresh(sip)
+            message = ChannelStatus(uuid=sip.uuid, active=sip.active)
+            print(f"SIP UUID: ***{message.uuid}***")
+            print(f"SIP ACTIVE: ***{message.active}***")
+            break
 
     except Exception as e:
         # Log the exception if any
@@ -143,27 +129,12 @@ async def check_gateway(db: Session):
         return None
 
 
-async def check_calls(db: Session, B_point: bool = False):
+async def check_calls():
     try:
-        if not B_point:
-            command = 'fs_cli -x "luarun check_calls.lua"'
-            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            await process.communicate()
-            status = get_status(db)
-            await asyncio.sleep(3)
-            db.refresh(status)
-            if status.call_active:
-                return True
-            return False
-        else:
-            command = 'fs_cli -x "luarun check_calls_B.lua"'
-            ssh_connect_B(command)
-            status = get_status(db)
-            await asyncio.sleep(3)
-            db.refresh(status)
-            if status.call_active_b:
-                return True
-            return False
+        command = 'fs_cli -x "luarun check_calls.lua"'
+        process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        await process.communicate()
+        return False
 
     except Exception as e:
         print(f"An error occurred: {e}")

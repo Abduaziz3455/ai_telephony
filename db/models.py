@@ -62,10 +62,3 @@ class Campaign(Base):
     endDate = Column(DateTime(), nullable=True)
     channelCount = Column(Integer, nullable=False)
     gateway_uuid = Column(String, ForeignKey('gateway.uuid'))
-
-
-class Status(Base):
-    id = Column(Integer, primary_key=True)
-    reloadStatus = Column(Boolean, default=False)
-    call_active = Column(Boolean, default=False)
-    call_active_b = Column(Boolean, default=False)
