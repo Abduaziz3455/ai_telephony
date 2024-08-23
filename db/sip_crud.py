@@ -21,7 +21,7 @@ def invalid_sips(db: Session):
 
 def get_active_sips(db: Session):
     query = db.query(Sip).all()
-    return [SipWithoutPassword(id=sip.id, name=sip.name, endpoint=sip.endpoint, username=sip.username,
+    return [SipWithoutPassword(id=sip.id, uuid=sip.uuid, name=sip.name, endpoint=sip.endpoint, username=sip.username,
                                channelCount=sip.channelCount, active=sip.active,
                                created_at=sip.created_at.strftime("%d.%m.%Y %H:%M")) for sip in query]
 

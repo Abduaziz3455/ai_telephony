@@ -22,6 +22,7 @@ class GetSip(BaseModel):
 
 class SipWithoutPassword(BaseModel):
     id: int
+    uuid: str
     name: str = "uztel"
     endpoint: str = '217.29.116.183'
     username: str = '781131202'
