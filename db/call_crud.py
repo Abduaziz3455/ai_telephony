@@ -1,5 +1,6 @@
 import logging
 import sys
+import uuid
 from typing import List
 
 from sqlalchemy import and_
@@ -78,6 +79,10 @@ def cancel_calls(db: Session, campaign_uuid: str):
 def get_call_history(campaign_uuid: str, db: Session):
     query = db.query(CallHistory).filter(CallHistory.campaign_uuid == campaign_uuid).all()
     return [CallInput(callUUID=call.uuid, phone=call.phone) for call in query]
+
+
+def get_target_calls(df):
+    return [CallInput(callUUID=str(uuid.uuid4()), phone=call) for call in df['phone'].tolist()]
 
 
 def get_active_calls(db: Session, campaign_uuid: str):

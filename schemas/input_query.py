@@ -20,6 +20,16 @@ class GetSip(BaseModel):
     channelCount: int = 1
 
 
+class SipWithoutPassword(BaseModel):
+    id: int
+    name: str = "uztel"
+    endpoint: str = '217.29.116.183'
+    username: str = '781131202'
+    channelCount: int = 1
+    active: bool = True
+    created_at: str
+
+
 class CallInput(BaseModel):
     callUUID: str = '00000000-0000-0000-0000-000000000000'
     phone: constr(strip_whitespace=True, pattern=r'^(\d{9})$') = '907303455'
@@ -30,7 +40,6 @@ class CallInput(BaseModel):
 
 class CampaignInput(BaseModel):
     name: str = 'Debt notice'
-    targets: List[CallInput]
     audio: str = 'https://storage.yandexcloud.net/myaudios/azizzzz.wav'
     retryCount: int = 3
     sip_uuid: str = 'uztel'
@@ -40,11 +49,23 @@ class CampaignInput(BaseModel):
         from_attributes = True
 
 
-class CallCreate(BaseModel):
-    uuid: str = '00000000-0000-0000-0000-000000000000'
-    callUUID: str = '00000000-0000-0000-0000-000000000000'
-    sip_id: int
-    campaign_uuid: int
+class GetCampaign(BaseModel):
+    id: int
+    name: str
+    audio_duration: int
+    retryCount: int = 3
+    sip_name: str
+    channelCount: int = 1
+    status: str
+    startDate: str
+    endDate: str = ''
+
+    class Config:
+        from_attributes = True
+
+
+class GetCall(BaseModel):
+    id: int
     phone: str
     status: str = 'PENDING'
     startDate: str

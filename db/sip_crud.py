@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from db.models import Sip
-from schemas.input_query import GetSip
+from schemas.input_query import SipWithoutPassword
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     handlers=[logging.StreamHandler(sys.stdout)])
@@ -21,8 +21,9 @@ def invalid_sips(db: Session):
 
 def get_active_sips(db: Session):
     query = db.query(Sip).all()
-    return [GetSip(uuid=sip.uuid, name=sip.name, endpoint=sip.endpoint, username=sip.username,
-                   channelCount=sip.channelCount) for sip in query]
+    return [SipWithoutPassword(id=sip.id, name=sip.name, endpoint=sip.endpoint, username=sip.username,
+                               channelCount=sip.channelCount, active=sip.active,
+                               created_at=sip.created_at.strftime("%d.%m.%Y %H:%M")) for sip in query]
 
 
 def create_sip(db: Session, **sip_data):

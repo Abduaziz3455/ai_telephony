@@ -3,29 +3,27 @@ import logging
 import sys
 import uuid
 from datetime import datetime
-from typing import List
+from io import BytesIO
 
+import pandas as pd
 import requests
 from environs import Env
-from fastapi import APIRouter, BackgroundTasks, Request, Depends
+from fastapi import APIRouter, BackgroundTasks, Request, Depends, UploadFile, File, Form
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from db.call_crud import bulk_create_call, get_call, cancel_calls, get_call_history
-from db.campaign_crud import create_campaign, update_campaign, get_campaign
-from db.sip_crud import get_sip, create_sip, get_active_sips
+from db.call_crud import bulk_create_call, get_call, cancel_calls, get_call_history, get_target_calls
+from db.campaign_crud import create_campaign, update_campaign, get_campaign, get_campaigns
 from db.models import CallHistory, Campaign, CampaignStatus, CallStatus
 from db.session import get_db
-from schemas.input_query import CampaignInput, SipCreate, CampaignCountResponse, \
-    ActiveCampaignResponse
+from db.sip_crud import get_sip, create_sip, get_active_sips
+from schemas.input_query import CampaignInput, SipCreate, CampaignCountResponse
 from script import add_sip, call_number, cancel_campaign, empty_channels, pause_campaign, \
     resume_campaign, get_duration, is_work_time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     handlers=[logging.StreamHandler(sys.stdout)])
-
 
 env = Env()
 env.read_env()
@@ -56,7 +54,7 @@ def save_to_file(audio_url, file_path: str):
         return False
 
 
-async def call_concurrent(query, db, sip, campaign, audio_path):
+async def call_concurrent(query, db, sip, campaign, audio_path, call_targets):
     tasks = []
     semaphore = asyncio.Semaphore(query.channelCount)
 
@@ -82,9 +80,9 @@ async def call_concurrent(query, db, sip, campaign, audio_path):
                 cancel_calls(db, campaign.uuid)
 
     if query.channelCount == 1:
-        await call_one_by_one(query.targets)
+        await call_one_by_one(call_targets)
     else:
-        for callinfo in query.targets:
+        for callinfo in call_targets:
             if campaign.status.value == 'IN_PROGRESS':
                 task = asyncio.create_task(call_with_semaphore(callinfo))
                 tasks.append(task)
@@ -98,8 +96,8 @@ async def call_concurrent(query, db, sip, campaign, audio_path):
             await asyncio.gather(*tasks)
 
 
-async def main_call(query, db, sip, campaign, audio_path):
-    await call_concurrent(query, db, sip, campaign, audio_path)
+async def main_call(query, db, sip, campaign, audio_path, targets):
+    await call_concurrent(query, db, sip, campaign, audio_path, targets)
     db.refresh(campaign)
     end_date_var = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if campaign.status.value == 'IN_PROGRESS':
@@ -170,17 +168,20 @@ async def retry_main_call(db, campaign: Campaign):
     update_campaign(db, campaign, camp_status, endDate=end_date_var)
 
 
-async def send_response(db, query, query_uuid, audio_path: str, sip):
+async def send_response(db, query, query_uuid, audio_path: str, sip, df):
     duration = get_duration(audio_path)
     if duration:
-        campaign = create_campaign(db=db, uuid=query_uuid, name=query.name, audio=audio_path, retryCount=query.retryCount,
+        campaign = create_campaign(db=db, uuid=query_uuid, name=query.name, audio=audio_path,
+                                   retryCount=query.retryCount,
                                    channelCount=query.channelCount, sip_uuid=sip.uuid, duration=duration)
     else:
         campaign = create_campaign(db=db, uuid=query_uuid, name=query.name, audio=audio_path,
                                    retryCount=query.retryCount,
                                    channelCount=query.channelCount, sip_uuid=sip.uuid)
     calls = []
-    for k in query.targets:
+    df['phone'] = df['phone'].astype(str)
+    targets = get_target_calls(df)
+    for k in targets:
         calls.append(CallHistory(uuid=k.callUUID, sip_id=sip.id, campaign_uuid=campaign.uuid, phone=k.phone,
                                  status='PENDING'))
     bulk_create_call(db, calls)
@@ -192,7 +193,7 @@ async def send_response(db, query, query_uuid, audio_path: str, sip):
             campaign.startDate = datetime.now()
             campaign.channelCount = query.channelCount
             campaign = update_campaign(db, campaign)
-            await main_call(query, db, sip, campaign, audio_path)
+            await main_call(query, db, sip, campaign, audio_path, targets)
         else:
             camp_status = 'BUSY'
             update_campaign(db, campaign, camp_status)
@@ -202,12 +203,39 @@ async def send_response(db, query, query_uuid, audio_path: str, sip):
 
 
 @router.post("/campaign")
-async def send_message(query: CampaignInput, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def send_message(
+        background_tasks: BackgroundTasks,
+        name: str = Form("Debt notice"),  # Default value set to 'Debt notice'
+        audio: str = Form("https://storage.yandexcloud.net/myaudios/ai_telephony/3.wav"),  # Default audio URL
+        retryCount: int = Form(3),  # Default retry count
+        sip_uuid: str = Form("uztel"),  # Default SIP UUID
+        channelCount: int = Form(1),  # Default channel count
+        file: UploadFile = File(...),  # File upload, no default as it is required
+        db: Session = Depends(get_db)
+):
+    # You can now access the form data and file upload
+    query = CampaignInput(
+        name=name,
+        audio=audio,
+        retryCount=retryCount,
+        sip_uuid=sip_uuid,
+        channelCount=channelCount,
+    )
     try:
         sip = get_sip(db, query.sip_uuid)
     except Exception as e:
         return JSONResponse(status_code=500,
                             content={"message": f"Campaign yaratishda xatolik: {str(e)}", "status": 500})
+
+    content = await file.read()
+
+    # Convert the content into a pandas DataFrame
+    if file.filename.endswith('.csv'):
+        df = pd.read_csv(BytesIO(content))
+    elif file.filename.endswith('.xlsx'):
+        df = pd.read_excel(BytesIO(content))
+    else:
+        return JSONResponse(content={"message": "Fayl formati noto'g'ri"}, status_code=400)
 
     if sip and sip.active:
         # Save audio file, if required
@@ -216,7 +244,7 @@ async def send_message(query: CampaignInput, background_tasks: BackgroundTasks, 
         audio_path = f"{freeswitch_loc}{query_uuid}.wav"
         audio_exists = save_to_file(query.audio, audio_path)
         if audio_exists:
-            background_tasks.add_task(send_response, db, query, query_uuid, audio_path, sip)
+            background_tasks.add_task(send_response, db, query, query_uuid, audio_path, sip, df)
             return JSONResponse(status_code=200,
                                 content={"message": "Campaign muvaffaqiyatli yaratildi!", "status": 200})
         else:
@@ -239,13 +267,19 @@ async def send_message(query: SipCreate, background_tasks: BackgroundTasks, db: 
                             content={"message": f"Sip yaratishda xatolik: {str(e)}", "status": 500})
 
 
-@router.get("/all_sips")
+@router.get("/get_sips")
 async def get_all_sip(db: Session = Depends(get_db)):
     all_sips = get_active_sips(db)
     return all_sips
 
 
-@router.post("/pause-campaign")
+@router.get("/get_campaigns")
+async def get_all_camp(is_active: bool = False, db: Session = Depends(get_db)):
+    all_camps = get_campaigns(db, active=is_active)
+    return all_camps
+
+
+@router.get("/pause-campaign")
 async def send_message(uuid: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
         campaign = get_campaign(db, uuid)
@@ -261,7 +295,7 @@ async def send_message(uuid: str, background_tasks: BackgroundTasks, db: Session
                             content={"message": f"Campaign pause qilishda xatolik: {str(e)}", "status": 500})
 
 
-@router.post("/resume-campaign")
+@router.get("/resume-campaign")
 async def send_message(uuid: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
         campaign = get_campaign(db, uuid)
@@ -277,7 +311,7 @@ async def send_message(uuid: str, background_tasks: BackgroundTasks, db: Session
                             content={"message": f"Campaign resume qilishda xatolik: {str(e)}", "status": 500})
 
 
-@router.post("/cancel-campaign")
+@router.get("/cancel-campaign")
 async def send_message(uuid: str, db: Session = Depends(get_db)):
     try:
         cancelled = cancel_campaign(db, uuid)
@@ -303,37 +337,37 @@ async def get_active_counts(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/active_campaigns", response_model=List[ActiveCampaignResponse])
-async def get_active_campaigns(db: Session = Depends(get_db)):
-    campaigns = db.query(Campaign).filter(Campaign.status == CampaignStatus.IN_PROGRESS).all()
+# @router.get("/active_campaigns", response_model=List[ActiveCampaignResponse])
+# async def get_active_campaigns(db: Session = Depends(get_db)):
+#     campaigns = db.query(Campaign).filter(Campaign.status == CampaignStatus.IN_PROGRESS).all()
+#
+#     active_campaigns = []
+#
+#     for campaign in campaigns:
+#         total_calls = db.query(CallHistory).filter(CallHistory.campaign_uuid == campaign.uuid).count()
+#         completed_duration_sum = db.query(func.sum(CallHistory.duration)).filter(
+#             CallHistory.campaign_uuid == campaign.uuid,
+#             CallHistory.duration.isnot(None)
+#         ).scalar() or 0
+#         active_call_count = db.query(CallHistory).filter(
+#             CallHistory.campaign_uuid == campaign.uuid,
+#             CallHistory.status.in_([CallStatus.RINGING, CallStatus.PENDING])
+#         ).count()
+#         remaining_time = active_call_count * campaign.audio_duration
+#         time_since_started = (datetime.now() - campaign.startDate).total_seconds()
+#
+#         active_campaigns.append({
+#             "uuid": campaign.uuid,
+#             "total_calls": total_calls,
+#             "completed_time": int(completed_duration_sum / 60),
+#             "remaining_time": int(remaining_time / 60),
+#             "time_since_started": int(time_since_started / 60)
+#         })
+#
+#     return active_campaigns
 
-    active_campaigns = []
 
-    for campaign in campaigns:
-        total_calls = db.query(CallHistory).filter(CallHistory.campaign_uuid == campaign.uuid).count()
-        completed_duration_sum = db.query(func.sum(CallHistory.duration)).filter(
-            CallHistory.campaign_uuid == campaign.uuid,
-            CallHistory.duration.isnot(None)
-        ).scalar() or 0
-        active_call_count = db.query(CallHistory).filter(
-            CallHistory.campaign_uuid == campaign.uuid,
-            CallHistory.status.in_([CallStatus.RINGING, CallStatus.PENDING])
-        ).count()
-        remaining_time = active_call_count * campaign.audio_duration
-        time_since_started = (datetime.now() - campaign.startDate).total_seconds()
-
-        active_campaigns.append({
-            "uuid": campaign.uuid,
-            "total_calls": total_calls,
-            "completed_time": int(completed_duration_sum / 60),
-            "remaining_time": int(remaining_time / 60),
-            "time_since_started": int(time_since_started / 60)
-        })
-
-    return active_campaigns
-
-
-@router.post("/stop_all")
+@router.get("/stop_all")
 async def send_message(uuid: str = None, db: Session = Depends(get_db)):
     try:
         if uuid:
@@ -345,7 +379,8 @@ async def send_message(uuid: str = None, db: Session = Depends(get_db)):
                 return JSONResponse(status_code=400, content={"message": "Bunday campaign mavjud emas!", "status": 400})
         else:
             campaigns = db.query(Campaign).filter(Campaign.status.in_([CampaignStatus.IN_PROGRESS,
-                                                                       CampaignStatus.PENDING, CampaignStatus.BUSY])).all()
+                                                                       CampaignStatus.PENDING,
+                                                                       CampaignStatus.BUSY])).all()
             for k in campaigns:
                 cancel_campaign(db, k.uuid)
             return JSONResponse(status_code=200,
