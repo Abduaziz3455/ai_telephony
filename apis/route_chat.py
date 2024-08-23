@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import uuid
 from datetime import datetime
 from typing import List
 
@@ -14,10 +15,10 @@ from sqlalchemy.orm import Session
 
 from db.call_crud import bulk_create_call, get_call, cancel_calls, get_call_history
 from db.campaign_crud import create_campaign, update_campaign, get_campaign
-from db.sip_crud import get_sip
+from db.sip_crud import get_sip, create_sip, get_active_sips
 from db.models import CallHistory, Campaign, CampaignStatus, CallStatus
 from db.session import get_db
-from schemas.input_query import CampaignInput, ChannelCreate, CampaignCountResponse, \
+from schemas.input_query import CampaignInput, SipCreate, CampaignCountResponse, \
     ActiveCampaignResponse
 from script import add_sip, call_number, cancel_campaign, empty_channels, pause_campaign, \
     resume_campaign, get_duration, is_work_time
@@ -169,13 +170,13 @@ async def retry_main_call(db, campaign: Campaign):
     update_campaign(db, campaign, camp_status, endDate=end_date_var)
 
 
-async def send_response(db, query, audio_path: str, sip):
+async def send_response(db, query, query_uuid, audio_path: str, sip):
     duration = get_duration(audio_path)
     if duration:
-        campaign = create_campaign(db=db, uuid=query.uuid, name=query.name, audio=audio_path, retryCount=query.retryCount,
+        campaign = create_campaign(db=db, uuid=query_uuid, name=query.name, audio=audio_path, retryCount=query.retryCount,
                                    channelCount=query.channelCount, sip_uuid=sip.uuid, duration=duration)
     else:
-        campaign = create_campaign(db=db, uuid=query.uuid, name=query.name, audio=audio_path,
+        campaign = create_campaign(db=db, uuid=query_uuid, name=query.name, audio=audio_path,
                                    retryCount=query.retryCount,
                                    channelCount=query.channelCount, sip_uuid=sip.uuid)
     calls = []
@@ -211,10 +212,11 @@ async def send_message(query: CampaignInput, background_tasks: BackgroundTasks, 
     if sip and sip.active:
         # Save audio file, if required
         freeswitch_loc = env.str('AUDIO_LOC')
-        audio_path = f"{freeswitch_loc}{query.uuid}.wav"
+        query_uuid = str(uuid.uuid4())
+        audio_path = f"{freeswitch_loc}{query_uuid}.wav"
         audio_exists = save_to_file(query.audio, audio_path)
         if audio_exists:
-            background_tasks.add_task(send_response, db, query, audio_path, sip)
+            background_tasks.add_task(send_response, db, query, query_uuid, audio_path, sip)
             return JSONResponse(status_code=200,
                                 content={"message": "Campaign muvaffaqiyatli yaratildi!", "status": 200})
         else:
@@ -225,13 +227,22 @@ async def send_message(query: CampaignInput, background_tasks: BackgroundTasks, 
 
 
 @router.post("/sip")
-async def send_message(query: ChannelCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def send_message(query: SipCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
-        background_tasks.add_task(add_sip, db, query)
-        return JSONResponse(status_code=200, content={"message": "Sip muvaffaqiyatli yaratildi!", "status": 200})
+        sip_uuid = str(uuid.uuid4())
+        create_sip(db, name=query.name, username=query.username, password=query.password, endpoint=query.endpoint,
+                   active=False, uuid=sip_uuid, channelCount=query.channelCount)
+        background_tasks.add_task(add_sip, db, query, sip_uuid)
+        return JSONResponse(status_code=200, content={"message": "Sip muvaffaqiyatli yaratildi!", "uuid": sip_uuid})
     except Exception as e:
         return JSONResponse(status_code=500,
                             content={"message": f"Sip yaratishda xatolik: {str(e)}", "status": 500})
+
+
+@router.get("/all_sips")
+async def get_all_sip(db: Session = Depends(get_db)):
+    all_sips = get_active_sips(db)
+    return all_sips
 
 
 @router.post("/pause-campaign")

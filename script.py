@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from db.call_crud import get_call, update_call
 from db.campaign_crud import update_campaign, get_campaign
-from db.sip_crud import create_sip, get_sip, invalid_sips
 from db.models import Campaign, Sip, CallHistory
-from schemas.input_query import ChannelCreate, CampaignUpdate, ChannelStatus
+from db.sip_crud import get_sip, invalid_sips
+from schemas.input_query import SipCreate, CampaignUpdate, ChannelStatus, GetSip
 
 env = Env()
 env.read_env()
@@ -45,7 +45,7 @@ async def update_and_send(db, call, status, recording=None, duration=None):
     #     message.duration = duration
 
 
-async def call_number(db: Session, sip: ChannelCreate, call: CallHistory, number: str, audioPath: str,
+async def call_number(db: Session, sip: GetSip, call: CallHistory, number: str, audioPath: str,
                       retryTime: int, UUID: str):
     # Construct the command
     command = f'fs_cli -x "luarun call_number.lua {sip.uuid} {sip.username} {number} {audioPath} {retryTime} {UUID}"'
@@ -93,14 +93,12 @@ async def call_number(db: Session, sip: ChannelCreate, call: CallHistory, number
         return "error"  # Handle any other errors
 
 
-async def add_sip(db: Session, query: ChannelCreate):
+async def add_sip(db: Session, query: SipCreate, sip_uuid):
     # Construct the command to run the Lua script with FreeSWITCH
-    create_sip(db, name=query.name, username=query.username, password=query.password, endpoint=query.endpoint,
-               active=False, uuid=query.uuid, channelCount=query.channelCount)
     try:
         while True:
-            sip = get_sip(db, query.uuid)
-            command = f'fs_cli -x "luarun add_sip.lua {query.uuid} {query.endpoint} {query.username} {query.password}"'
+            sip = get_sip(db, sip_uuid)
+            command = f'fs_cli -x "luarun add_sip.lua {sip_uuid} {query.endpoint} {query.username} {query.password}"'
             process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             await process.communicate()
             # Adding a delay to ensure the command execution completes

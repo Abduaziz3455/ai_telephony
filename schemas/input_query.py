@@ -3,7 +3,15 @@ from typing import List, Optional
 from pydantic import BaseModel, constr
 
 
-class ChannelCreate(BaseModel):
+class SipCreate(BaseModel):
+    name: str = "uztel"
+    endpoint: str = '217.29.116.183'
+    username: str = '781131202'
+    password: str = 'password'
+    channelCount: int = 1
+
+
+class GetSip(BaseModel):
     uuid: str = "uztel"
     name: str = "uztel"
     endpoint: str = '217.29.116.183'
@@ -21,7 +29,6 @@ class CallInput(BaseModel):
 
 
 class CampaignInput(BaseModel):
-    uuid: str = '00000000-0000-0000-0000-000000000000'
     name: str = 'Debt notice'
     targets: List[CallInput]
     audio: str = 'https://storage.yandexcloud.net/myaudios/azizzzz.wav'
