@@ -20,7 +20,7 @@ from db.session import get_db
 from db.sip_crud import get_sip, create_sip, get_active_sips
 from schemas.input_query import CampaignInput, SipCreate, CampaignCountResponse
 from script import add_sip, call_number, cancel_campaign, empty_channels, pause_campaign, \
-    resume_campaign, get_duration, is_work_time
+    resume_campaign, get_duration
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     handlers=[logging.StreamHandler(sys.stdout)])
@@ -185,21 +185,21 @@ async def send_response(db, query, query_uuid, audio_path: str, sip, df):
         calls.append(CallHistory(uuid=k.callUUID, sip_id=sip.id, campaign_uuid=campaign.uuid, phone=k.phone,
                                  status='PENDING'))
     bulk_create_call(db, calls)
-    if is_work_time():
-        query.channelCount = empty_channels(db, sip, campaign)
-        print("Channel Count: " + str(query.channelCount))
-        if query.channelCount > 0:
-            campaign.status = 'IN_PROGRESS'
-            campaign.startDate = datetime.now()
-            campaign.channelCount = query.channelCount
-            campaign = update_campaign(db, campaign)
-            await main_call(query, db, sip, campaign, audio_path, targets)
-        else:
-            camp_status = 'BUSY'
-            update_campaign(db, campaign, camp_status)
+    # if is_work_time():
+    query.channelCount = empty_channels(db, sip, campaign)
+    print("Channel Count: " + str(query.channelCount))
+    if query.channelCount > 0:
+        campaign.status = 'IN_PROGRESS'
+        campaign.startDate = datetime.now()
+        campaign.channelCount = query.channelCount
+        campaign = update_campaign(db, campaign)
+        await main_call(query, db, sip, campaign, audio_path, targets)
     else:
-        camp_status = 'PAUSED'
+        camp_status = 'BUSY'
         update_campaign(db, campaign, camp_status)
+    # else:
+    #     camp_status = 'PAUSED'
+    #     update_campaign(db, campaign, camp_status)
 
 
 @router.post("/campaign")

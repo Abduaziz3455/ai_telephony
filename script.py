@@ -52,39 +52,39 @@ async def call_number(db: Session, sip: GetSip, call: CallHistory, number: str, 
     try:
         if call.status.value == 'PENDING':
             # Execute the command and capture the output
-            if is_work_time():
-                process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                call.status = "RINGING"
-                call.startDate = datetime.now()
-                update_call(db, call)
+            # if is_work_time():
+            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            call.status = "RINGING"
+            call.startDate = datetime.now()
+            update_call(db, call)
 
-                time_count = 0
+            time_count = 0
 
-                while True:
-                    call = get_call(db, UUID)
-                    db.refresh(call)
-                    call_status = call.status.value
-                    print(call_status)
+            while True:
+                call = get_call(db, UUID)
+                db.refresh(call)
+                call_status = call.status.value
+                print(call_status)
 
-                    if call_status == 'RINGING':
-                        if (time_count >= 30 and retryTime in [0, 1]) or (time_count >= 70 and retryTime >= 2):
-                            await update_and_send(db, call, 'DROPPED')
-                            break
-                        time_count += 1
-                        await asyncio.sleep(3)
-                    elif call_status in ['COMPLETED', 'DROPPED', 'TERMINATED']:
-                        recording = f"recordings/{UUID}.wav"
-                        if call.duration:
-                            await update_and_send(db, call, call_status, recording, call.duration)
-                        else:
-                            await update_and_send(db, call, call_status, recording)
+                if call_status == 'RINGING':
+                    if (time_count >= 30 and retryTime in [0, 1]) or (time_count >= 70 and retryTime >= 2):
+                        await update_and_send(db, call, 'DROPPED')
                         break
+                    time_count += 1
+                    await asyncio.sleep(3)
+                elif call_status in ['COMPLETED', 'DROPPED', 'TERMINATED']:
+                    recording = f"recordings/{UUID}.wav"
+                    if call.duration:
+                        await update_and_send(db, call, call_status, recording, call.duration)
                     else:
-                        await update_and_send(db, call, 'MISSED')
-                        break
-            else:
-                camp = get_campaign(db, call.campaign_uuid)
-                update_campaign(db, camp, 'PAUSED')
+                        await update_and_send(db, call, call_status, recording)
+                    break
+                else:
+                    await update_and_send(db, call, 'MISSED')
+                    break
+            # else:
+            #     camp = get_campaign(db, call.campaign_uuid)
+            #     update_campaign(db, camp, 'PAUSED')
     except subprocess.TimeoutExpired:
         print("Command execution timed out.")
         return "timeout"  # Handle timeout
@@ -200,28 +200,28 @@ async def continue_campaign(db, send_campaign_update, retry_main_call, start=Fal
         else:
             new_camp = busy_campaign(db)
         if new_camp:
-            if is_work_time():
-                print("New Campaign: ", new_camp)
-                sip = get_sip(db, new_camp.sip_uuid)
-                channels = empty_channels(db, sip, new_camp)
-                if channels >= 1:
-                    await asyncio.sleep(7)
-                    new_camp.status = 'IN_PROGRESS'
-                    new_camp.startDate = datetime.now()
-                    new_camp.channelCount = channels
-                    print("New Channel Count: " + str(new_camp.channelCount))
-                    campaign = update_campaign(db, new_camp)
-                    message = CampaignUpdate(uuid=campaign.uuid, status=campaign.status,
-                                             startDate=campaign.startDate.strftime('%Y-%m-%d %H:%M:%S'))
-                    await send_campaign_update(message)
-                    await retry_main_call(db, campaign)
-                else:
-                    await asyncio.sleep(5)
-            else:
-                new_camp.status = 'PAUSED'
+            # if is_work_time():
+            print("New Campaign: ", new_camp)
+            sip = get_sip(db, new_camp.sip_uuid)
+            channels = empty_channels(db, sip, new_camp)
+            if channels >= 1:
+                await asyncio.sleep(7)
+                new_camp.status = 'IN_PROGRESS'
+                new_camp.startDate = datetime.now()
+                new_camp.channelCount = channels
+                print("New Channel Count: " + str(new_camp.channelCount))
                 campaign = update_campaign(db, new_camp)
-                message = CampaignUpdate(uuid=campaign.uuid, status=campaign.status)
+                message = CampaignUpdate(uuid=campaign.uuid, status=campaign.status,
+                                         startDate=campaign.startDate.strftime('%Y-%m-%d %H:%M:%S'))
                 await send_campaign_update(message)
+                await retry_main_call(db, campaign)
+            else:
+                await asyncio.sleep(5)
+            # else:
+            #     new_camp.status = 'PAUSED'
+            #     campaign = update_campaign(db, new_camp)
+            #     message = CampaignUpdate(uuid=campaign.uuid, status=campaign.status)
+            #     await send_campaign_update(message)
         else:
             logging.info("No new campaign")
             break
