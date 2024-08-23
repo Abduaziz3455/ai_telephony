@@ -184,7 +184,7 @@ def retry_campaign(db: Session):
     return campaign
 
 
-def is_work_time(start_str='8:00', end_str='23:00'):
+def is_work_time(start_str='07:00', end_str='03:00'):
     current_time = datetime.now().time()
     # Parse the start and end time strings
     start_time = datetime.strptime(start_str, "%H:%M").time()
