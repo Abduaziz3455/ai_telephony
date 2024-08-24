@@ -3,12 +3,13 @@ import sys
 import uuid
 from typing import List
 
-from sqlalchemy import and_
+from sqlalchemy import and_, desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from db.campaign_crud import get_campaign
 from db.models import CallHistory
-from schemas.input_query import CallInput
+from schemas.input_query import CallInput, GetCall
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     handlers=[logging.StreamHandler(sys.stdout)])
@@ -85,7 +86,10 @@ def get_target_calls(df):
     return [CallInput(callUUID=str(uuid.uuid4()), phone=call) for call in df['phone'].tolist()]
 
 
-def get_active_calls(db: Session, campaign_uuid: str):
-    query = db.query(CallHistory).filter(and_(CallHistory.campaign_uuid == campaign_uuid,
-                                              CallHistory.status.value == 'RINGING')).all()
-    return query
+def get_calls(db: Session):
+    query = db.query(CallHistory).order_by(desc(CallHistory.id)).all()
+    calls = [GetCall(id=call.id, phone=call.phone,
+                     campaignName=get_campaign(db, call.campaign_uuid).name,
+                     status=call.status, recording=call.recording if call.recording else '', duration=call.duration if call.duration else 0,
+                     startDate=call.startDate.strftime("%d.%m.%Y %H:%M") if call.startDate else '') for call in query]
+    return calls

@@ -1,6 +1,7 @@
 import logging
 import sys
 
+from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -18,16 +19,21 @@ def get_campaign(db: Session, uuid: str):
 
 def get_campaigns(db: Session, active=False):
     if active:
-        camps = db.query(Campaign).filter(Campaign.status.in_(['PENDING', 'IN_PROGRESS'])).all()
+        camps = db.query(Campaign).order_by(desc(Campaign.id)).filter(Campaign.status.in_(['IN_PROGRESS'])).all()
     else:
-        camps = db.query(Campaign).filter(Campaign.status.notin_(['PENDING', 'IN_PROGRESS'])).all()
-    return [GetCampaign(id=camp.id, name=camp.name, audio_duration=camp.audio_duration, retryCount=camp.retryCount,
+        camps = db.query(Campaign).order_by(desc(Campaign.id)).filter(Campaign.status.notin_(['IN_PROGRESS'])).all()
+    ret_camps = []
+    for camp in camps:
+        ret_camps.append(
+            GetCampaign(uuid=camp.uuid, name=camp.name, audio_duration=camp.audio_duration, retryCount=camp.retryCount,
                         sip_name=get_sip(db, camp.sip_uuid).name, channelCount=camp.channelCount, status=camp.status,
-                        startDate=camp.startDate.strftime("%d.%m.%Y %H:%M"),
-                        endDate=camp.endDate.strftime("%d.%m.%Y %H:%M")) for camp in camps]
+                        startDate=camp.startDate.strftime("%d.%m.%Y %H:%M") if camp.startDate else '',
+                        endDate=camp.endDate.strftime("%d.%m.%Y %H:%M") if camp.endDate else ''))
+    return ret_camps
 
 
-def create_campaign(db: Session, uuid: str, name: str, audio: str, channelCount: int, sip_uuid: str, duration: int = None,
+def create_campaign(db: Session, uuid: str, name: str, audio: str, channelCount: int, sip_uuid: str,
+                    duration: int = None,
                     retryCount: int = 0):
     db_camp = Campaign(uuid=uuid, name=name, audio=audio, retryCount=retryCount, channelCount=channelCount,
                        sip_uuid=sip_uuid, audio_duration=duration)

@@ -13,7 +13,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from db.call_crud import bulk_create_call, get_call, cancel_calls, get_call_history, get_target_calls
+from db.call_crud import bulk_create_call, get_call, cancel_calls, get_call_history, get_target_calls, get_calls
 from db.campaign_crud import create_campaign, update_campaign, get_campaign, get_campaigns
 from db.models import CallHistory, Campaign, CampaignStatus, CallStatus
 from db.session import get_db
@@ -277,6 +277,12 @@ async def get_all_sip(db: Session = Depends(get_db)):
 async def get_all_camp(is_active: bool = False, db: Session = Depends(get_db)):
     all_camps = get_campaigns(db, active=is_active)
     return all_camps
+
+
+@router.get("/get_calls")
+async def get_all_call(db: Session = Depends(get_db)):
+    all_calls = get_calls(db)
+    return all_calls
 
 
 @router.get("/pause-campaign")

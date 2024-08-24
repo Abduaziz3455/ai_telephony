@@ -51,7 +51,7 @@ class CampaignInput(BaseModel):
 
 
 class GetCampaign(BaseModel):
-    id: int
+    uuid: str
     name: str
     audio_duration: int
     retryCount: int = 3
@@ -68,7 +68,10 @@ class GetCampaign(BaseModel):
 class GetCall(BaseModel):
     id: int
     phone: str
+    campaignName: str
     status: str = 'PENDING'
+    recording: str
+    duration: int
     startDate: str
 
 

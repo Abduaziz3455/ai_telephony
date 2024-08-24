@@ -1,6 +1,7 @@
 import logging
 import sys
 
+from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -20,7 +21,7 @@ def invalid_sips(db: Session):
 
 
 def get_active_sips(db: Session):
-    query = db.query(Sip).all()
+    query = db.query(Sip).order_by(desc(Sip.active)).all()
     return [SipWithoutPassword(id=sip.id, uuid=sip.uuid, name=sip.name, endpoint=sip.endpoint, username=sip.username,
                                channelCount=sip.channelCount, active=sip.active,
                                created_at=sip.created_at.strftime("%d.%m.%Y %H:%M")) for sip in query]
