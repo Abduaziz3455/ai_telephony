@@ -19,9 +19,9 @@ def get_campaign(db: Session, uuid: str):
 
 def get_campaigns(db: Session, active=False):
     if active:
-        camps = db.query(Campaign).order_by(desc(Campaign.id)).filter(Campaign.status.in_(['IN_PROGRESS'])).all()
+        camps = db.query(Campaign).order_by(desc(Campaign.id)).filter(Campaign.status.in_(['IN_PROGRESS', 'PAUSED'])).all()
     else:
-        camps = db.query(Campaign).order_by(desc(Campaign.id)).filter(Campaign.status.notin_(['IN_PROGRESS'])).all()
+        camps = db.query(Campaign).order_by(desc(Campaign.id)).filter(Campaign.status.notin_(['IN_PROGRESS', 'PAUSED'])).all()
     ret_camps = []
     for camp in camps:
         ret_camps.append(
