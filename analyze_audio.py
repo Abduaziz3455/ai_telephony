@@ -2,6 +2,7 @@ import sys
 
 import psycopg2
 from psycopg2 import sql
+from models import main_func
 
 
 def analyze_audio(uuid):
@@ -12,17 +13,22 @@ def analyze_audio(uuid):
         # Create a cursor object
         cur = conn.cursor()
         # Retrieve columns of the table using the UUID
-        cur.execute(sql.SQL("SELECT voice FROM voicehistory WHERE id = %s"), [uuid])
+        cur.execute(sql.SQL("SELECT voice FROM voicehistory WHERE uuid = %s"), [uuid])
 
-        audio = cur.fetchone()[0]
-        print(audio)
+        audio_path = cur.fetchone()[0]
+        all_scripts = cur.execute(sql.SQL("SELECT ID, Response FROM scripts"))
+
+        user_resp = main_func(audio_path, all_scripts)
+        script_id = user_resp['ID']
+        date = user_resp['Payment_Date']
+
+        cur.execute(sql.SQL("SELECT audio_path FROM scripts WHERE ID = %s"), [script_id])
+        script_path = cur.fetchone()[0]
         # Update a column in the table based on the UUID
-        update_query = sql.SQL("UPDATE voicehistory SET resVoice = %s WHERE id = %s")
-        cur.execute(update_query, ('C:/Users/Abdua/Downloads/Qarz.wav', uuid))
-
+        update_query = sql.SQL("UPDATE voicehistory SET resVoice = %s, payDate = %s, scriptId = %s WHERE uuid = %s")
+        cur.execute(update_query, (script_path, date, scriptId, uuid))
         # Commit the transaction
         conn.commit()
-
         # Close the cursor and connection
         cur.close()
         conn.close()

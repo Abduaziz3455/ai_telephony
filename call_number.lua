@@ -6,8 +6,15 @@ local retryTime = tonumber(argv[5])
 local UUID = argv[6]
 local recording_path = "recordings/" .. UUID .. ".wav"
 
+local db_user = os.getenv("DB_USER") or "postgres"
+local db_pass = os.getenv("DB_PASS") or "abdu3421"
+local db_host = os.getenv("DB_HOST") or "127.0.0.1"
+local db_port = os.getenv("DB_PORT") or "5432"
+local py_env = os.getenv("PY_ENV") or "C:/Users/Abdua/anaconda3/envs/chatbot/python.exe"
+local py_path = os.getenv("PY_PATH") or "C:/Users/Abdua/Downloads/analyze_audio.py"
+
 -- Connect to the PostgreSQL database
-local dbh = freeswitch.Dbh("postgres://postgres:abdu3421@127.0.0.1:5432/robot_call")
+local dbh = freeswitch.Dbh(string.format("postgres://%s:%s@%s:%s/robot_call", db_user, db_pass, db_host, db_port))
 assert(dbh:connected(), "Failed to connect to the database")
 
 local function update_stat_func(dbh, UUID, status, duration)
@@ -43,12 +50,11 @@ local function os_capture(cmd)
     return s
 end
 
-
 local attempt = 0
 local final_status
 local duration
 local hangup_cause
-
+local finished = false
 
 repeat
     attempt = attempt + 1
@@ -66,38 +72,48 @@ repeat
         new_session:execute("set", "RECORD_STEREO=true")
         new_session:execute("record_session", recording_path)
         new_session:streamFile(audioFile)
-        -- Play the audio file
         freeswitch.consoleLog("WARNING", "Audio Path: " .. audioFile .. "\n")
-        -- Insert audio information to database
-        new_session:recordFile("recordings/" .. UUID .. "_response.wav", 10, 500, 5)
-        local insert_audio_query = string.format("INSERT INTO voicehistory (voice, scriptId, payDate, reason, callId, resVoice, finished) VALUES ('%s', '', '', '', ", UUID, audioFile)
-        local success, err = dbh:query(insert_audio_query)
-        if not success then
-            freeswitch.consoleLog("ERROR", "Failed to insert audio information: " .. tostring(err) .. "\n")
-        end
-        -- Call Python script to analyze the audio file.
-        local analysis_result = os_capture("C:/Users/Abdua/anaconda3/envs/chatbot/python.exe C:/Users/Abdua/Downloads/analyze_audio.py " .. UUID)
-        freeswitch.consoleLog("INFO", "Audio Analysis Result: " .. analysis_result .. "\n")
-        -- Pause for one second
-        freeswitch.msleep(3000)
-        
-        -- Select `resaudio` from the `audio` table
-        local select_audio_query = string.format([[
-            SELECT resaudio FROM audio WHERE uuid='%s'
-        ]], UUID)
-        
-        local resaudio
-        local query_success = dbh:query(select_audio_query, function(row)
-            resaudio = row.resaudio
-        end)
-        
-        if query_success then
-            new_session:streamFile(resaudio)
-            freeswitch.consoleLog("INFO", "Resaudio: " .. (resaudio or "nil") .. "\n")
-        else
-            freeswitch.consoleLog("ERROR", "Failed to select resaudio: " .. tostring(err) .. "\n")
-        end
-        
+
+        -- Loop until finished is true
+        repeat
+            -- Insert audio information to database
+            local response_path = "recordings/" .. UUID .. "_response.wav"
+            new_session:recordFile(response_path, 10, 500, 5)
+            local insert_audio_query = string.format([[
+                INSERT INTO voicehistory (uuid, voice, scriptId, payDate, reason, callUuid, resVoice, finished)
+                VALUES ('%s', '%s', %s, '', '', '%s', '', %s)]], UUID, response_path, nil, UUID, false)
+            local success, err = dbh:query(insert_audio_query)
+            if not success then
+                freeswitch.consoleLog("ERROR", "Failed to insert audio information: " .. tostring(err) .. "\n")
+            end
+
+            -- Call Python script to analyze the audio file.
+            local analysis_result = os_capture(py_env .. " " .. py_path .. " " .. UUID)
+            freeswitch.consoleLog("INFO", "Audio Analysis Result: " .. analysis_result .. "\n")
+
+            -- Pause for three seconds
+            freeswitch.msleep(3000)
+
+            -- Select `resVoice` and `finished` from the `voicehistory` table
+            local select_audio_query = string.format([[
+                SELECT resVoice, finished FROM voicehistory WHERE uuid='%s'
+            ]], UUID)
+
+            local resVoice
+            local query_success = dbh:query(select_audio_query, function(row)
+                resVoice = row.resVoice
+                finished = (row.finished == 't') -- Assuming `finished` is stored as a boolean in the DB
+            end)
+
+            if query_success and resVoice then
+                new_session:streamFile(resVoice)
+                freeswitch.consoleLog("INFO", "resVoice: " .. (resVoice or "nil") .. "\n")
+            else
+                freeswitch.consoleLog("ERROR", "Failed to select resVoice: " .. tostring(err) .. "\n")
+            end
+
+        until finished
+
         -- Stop recording
         new_session:execute("stop_record_session", recording_path)
         -- Measure time before hanging up the call
@@ -123,6 +139,7 @@ repeat
     else
         freeswitch.consoleLog("WARNING", "HANGUP_CAUSE: No HANGUP\n")
     end
+
     -- Determine the final status based on the session state and hangup cause
     if g_state == 'ERROR' then
         final_status = 'MISSED'
@@ -141,7 +158,8 @@ repeat
         break
     end
 
-until attempt >= retryTime
+until attempt >= retryTime or finished
+
 freeswitch.consoleLog("WARNING", "attempt: " .. attempt .. "\n")
 update_stat_func(dbh, UUID, final_status, duration)
 
