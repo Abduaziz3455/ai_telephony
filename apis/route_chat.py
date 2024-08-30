@@ -183,7 +183,7 @@ async def send_response(db, query, query_uuid, audio_path: str, sip, df):
     targets = get_target_calls(df)
     for k in targets:
         calls.append(CallHistory(uuid=k.callUUID, sip_id=sip.id, campaign_uuid=campaign.uuid, phone=k.phone,
-                                 status='PENDING'))
+                                 client_name=k.client_name, status='PENDING'))
     bulk_create_call(db, calls)
     # if is_work_time():
     query.channelCount = empty_channels(db, sip, campaign)

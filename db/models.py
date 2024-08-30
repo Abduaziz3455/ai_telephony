@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Boolean, Column, Integer, String, Enum as SqlEnum, DateTime, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Enum as SqlEnum, DateTime, ForeignKey, Date
 
 from db.base_class import Base
 
@@ -43,11 +43,29 @@ class CallHistory(Base):
     uuid = Column(String, unique=True)
     sip_id = Column(Integer, ForeignKey('sip.id'))
     campaign_uuid = Column(String, ForeignKey('campaign.uuid'))
+    client_name = Column(String, nullable=True)
     phone = Column(String)
     status = Column(SqlEnum(CallStatus), nullable=False, default=CallStatus.RINGING)
     recording = Column(String, nullable=True)
     duration = Column(Integer, nullable=True)
     startDate = Column(DateTime(), default=datetime.now())
+
+
+class VoiceHistory(Base):
+    id = Column(Integer, primary_key=True)
+    voice = Column(String, nullable=True)
+    scriptId = Column(Integer, ForeignKey('script.id'), nullable=True)
+    payDate = Column(Date(), nullable=True)
+    reason = Column(String, nullable=True)
+    callId = Column(Integer, ForeignKey('callhistory.id'), nullable=True)
+    resVoice = Column(String, nullable=True)
+    finished = Column(Boolean, default=False)
+
+
+class Script(Base):
+    id = Column(Integer, primary_key=True)
+    text = Column(String)
+    voice = Column(String)
 
 
 class Campaign(Base):

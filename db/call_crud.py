@@ -79,11 +79,12 @@ def cancel_calls(db: Session, campaign_uuid: str):
 
 def get_call_history(campaign_uuid: str, db: Session):
     query = db.query(CallHistory).filter(CallHistory.campaign_uuid == campaign_uuid).all()
-    return [CallInput(callUUID=call.uuid, phone=call.phone) for call in query]
+    return [CallInput(callUUID=call.uuid, phone=call.phone, client_name=call.client_name) for call in query]
 
 
 def get_target_calls(df):
-    return [CallInput(callUUID=str(uuid.uuid4()), phone=call) for call in df['phone'].tolist()]
+    return [CallInput(callUUID=str(uuid.uuid4()), phone=row['phone'], client_name=row['name'])
+            for _, row in df.iterrows()]
 
 
 def get_calls(db: Session):

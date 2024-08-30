@@ -34,6 +34,7 @@ class SipWithoutPassword(BaseModel):
 class CallInput(BaseModel):
     callUUID: str = '00000000-0000-0000-0000-000000000000'
     phone: constr(strip_whitespace=True, pattern=r'^(\d{9})$') = '907303455'
+    client_name: str
 
     class Config:
         from_attributes = True

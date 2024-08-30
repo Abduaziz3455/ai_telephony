@@ -1,0 +1,10 @@
+ID,Response,Description,Synonyms,Category,Keywords
+0,Men to'liq summani [sana] to'layman.,Mijoz to'lovni belgilangan sana bo'yicha to'liq amalga oshirishini bildiradi.,"To'liq to'lov, to'lash vaqti",To'lov,"to'liq, to'lash, sana"
+1,To'lov rejasini tuzishim mumkinmi?,Mijoz to'lov rejasini tuzish imkoniyatini so'raydi.,"To'lov rejasi, bo'lib-bo'lib to'lash",To'lov,"to'lov, rejasi, tuzish"
+2,Men allaqachon to'laganman.,Mijoz allaqachon to'lovni amalga oshirganini ta'kidlaydi.,"To'langan, amalga oshirilgan to'lov",To'lov,"to'langan, allaqachon"
+3,"Hozir gaplasha olmayman, qayta qo'ng'iroq qila olasizmi?",Mijoz hozirda gaplasha olmasligini va keyinroq qo'ng'iroq qilishni so'raydi.,"Qayta qo'ng'iroq qilish, gaplasha olmayman",Qo'ng'iroq,"gaplasha olmayman, qayta qo'ng'iroq"
+4,Men hech qanday hisob-faktura olmadim.,Mijoz hisob-faktura olmaganini bildiradi.,"Hisob-faktura olmagan, yuborilmagan",Hisob-faktura,"hisob-faktura, olmagan"
+5,Men to'lamayman.,Mijoz qarzini to'lashni rad etadi.,"To'lamayman, rad etaman",Rad etish,"to'lamayman, rad"
+6,Men moliyaviy qiyinchiliklardan o'tmoqdaman. Mijoz moliyaviy qiyinchiliklarga duch kelayotganini bildiradi.,"Moliyaviy qiyinchiliklar, qiyin ahvol",Moliyaviy qiyinchiliklar,"moliyaviy, qiyinchiliklar"
+7,"Qarz summasini va bank nomini qayta ayta olasizmi, iltimos?",Mijoz qarz summasi va bank nomini qayta so'raydi.,"Qarz miqdori, bank nomi, takrorlash",Ma'lumot so'rash,"qarz, miqdor, bank"
+8,Boshqa,Mijoz boshqa sabablarga ko'ra javob beradi.,"Boshqa sabablar, boshqa javoblar",Boshqa,"boshqa, sabab"
