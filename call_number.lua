@@ -92,7 +92,7 @@ repeat
             freeswitch.consoleLog("INFO", "Audio Analysis Result: " .. analysis_result .. "\n")
 
             -- Pause for three seconds
-            freeswitch.msleep(3000)
+            freeswitch.msleep(4000)
 
             -- Select `resVoice` and `finished` from the `voicehistory` table
             local select_audio_query = string.format([[

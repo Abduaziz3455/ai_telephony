@@ -53,12 +53,13 @@ class CallHistory(Base):
 
 class VoiceHistory(Base):
     id = Column(Integer, primary_key=True)
+    uuid = Column(String)
     voice = Column(String, nullable=True)
-    scriptId = Column(Integer, ForeignKey('script.id'), nullable=True)
-    payDate = Column(Date(), nullable=True)
+    scriptid = Column(Integer, ForeignKey('script.id'), nullable=True)
+    paydate = Column(String, nullable=True)
     reason = Column(String, nullable=True)
-    callId = Column(Integer, ForeignKey('callhistory.id'), nullable=True)
-    resVoice = Column(String, nullable=True)
+    calluuid = Column(String, ForeignKey('callhistory.uuid'), nullable=True)
+    resvoice = Column(String, nullable=True)
     finished = Column(Boolean, default=False)
 
 

@@ -1,0 +1,9 @@
+id,text,voice
+2,"Men allaqachon to'laganman. Mijoz allaqachon to'lovni amalga oshirganini ta'kidlaydi. To'langan, amalga oshirilgan to'lov. To'lov. to'langan, allaqachon",scripts/2.wav
+8,"Boshqa. Mijoz boshqa sabablarga ko'ra javob beradi. Boshqa sabablar, boshqa javoblar. Boshqa. boshqa, sabab",scripts/4.wav
+0,"Men to'liq summani [sana] to'layman. Mijoz to'lovni belgilangan sana bo'yicha to'liq amalga oshirishini bildiradi. To'liq to'lov, to'lash vaqti. To'lov. to'liq, to'lash, sana",scripts/0.wav
+4,"Meni hech qanday qarzim yo'q. Mijoz qarz olmaganini bildiradi. Qarz olmagan, yuborilmagan. Kredit. qarz, olmagan",scripts/2.wav
+1,"To'lov rejasini tuzishim mumkinmi? Mijoz to'lov rejasini tuzish imkoniyatini so'raydi. To'lov rejasi, bo'lib-bo'lib to'lash. To'lov. to'lov, rejasi, tuzish",scripts/1.wav
+6,"Men moliyaviy qiyinchiliklardan o'tmoqdaman. Mijoz moliyaviy qiyinchiliklarga duch kelayotganini bildiradi. Moliyaviy qiyinchiliklar, qiyin ahvol. Moliyaviy qiyinchiliklar. moliyaviy, qiyinchiliklar",scripts/4.wav
+7,"Qarz summasini va bank nomini qayta ayta olasizmi, iltimos? Mijoz qarz summasi va bank nomini qayta so'raydi. Qarz miqdori, bank nomi, takrorlash. Ma'lumot so'rash. qarz, miqdor, bank",scripts/default1.wav
+5,"Men to'lamayman. Mijoz qarzini to'lashni rad etadi. To'lamayman, rad etaman. Rad etish. to'lamayman, rad",scripts/3.wav

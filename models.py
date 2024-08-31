@@ -1,15 +1,13 @@
 import logging
 
 import requests
-from environs import Env
-import pandas as pd
 from dotenv import load_dotenv
+from environs import Env
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
 load_dotenv()
-
 
 env = Env()
 env.read_env()
@@ -26,7 +24,9 @@ def send_stt_request(path):
         response = requests.post(url, headers=headers, files=files, data=data)
         if response.status_code == 200:
             print("Yuborildii")
-            return response.json()['result']['text']
+            javob = response.json()['result']['text']
+            print("Response: {}".format(javob))
+            return javob
         else:
             logging.error(response.text)
             logging.error('Mohirai error in initial request')
@@ -43,19 +43,16 @@ def send_stt_request(path):
 def process_user_query(text: str, responses: list, today_date: str = "2024-08-25", week_day: str = "sunday"):
     # Define a schema for extracting both response ID and payment date
     schemas = [ResponseSchema(name="ID", description="The ID of the exact matching response. Options: from 0 to 8",
-                              type='number'),
-               ResponseSchema(name="Payment_Date",
-                              description="The exact date when the user intends to make a payment, in dd-mm format",
-                              type="string")]
+                              type='number'), ResponseSchema(name="Payment_Date",
+                                                             description="The exact date when the user intends to make a payment, in dd-mm format",
+                                                             type="string")]
 
     # Create an output parser with the combined schema
     output_parser = StructuredOutputParser.from_response_schemas(schemas)
     format_instructions = output_parser.get_format_instructions()
 
     # Create a formatted string for responses context
-    responses_context = "\n".join([
-        f"ID: {resp[0]}, Response: {resp[1]}"
-        for resp in responses])
+    responses_context = "\n".join([f"ID: {resp[0]}, Response: {resp[1]}" for resp in responses])
 
     # Define a combined prompt template
     prompt = PromptTemplate(template=("You are an expert in handling natural language queries for debt collection. "
@@ -88,7 +85,8 @@ def process_user_query(text: str, responses: list, today_date: str = "2024-08-25
 
 def main_func(audio_path, scripts):
     # Load the CSV data
-    transcription = send_stt_request(audio_path)
+    transcription = send_stt_request(f"C:/Program Files/FreeSWITCH/sounds/en/us/callie/{audio_path}")
+    print(transcription)
     if transcription:
         date = "2024-08-30"
         weekday = "friday"
@@ -99,3 +97,20 @@ def main_func(audio_path, scripts):
             return None
     else:
         return None
+
+import psycopg2
+from psycopg2 import sql
+
+conn = psycopg2.connect(dbname="robot_call", user="postgres", password="abdu3421", host="127.0.0.1",
+                        port="5432")
+# Create a cursor object
+cur = conn.cursor()
+# Retrieve columns of the table using the UUID
+cur.execute(sql.SQL("SELECT voice, paydate FROM voicehistory WHERE uuid = %s"), ['dad7911a-2d9c-4c5e-a3bf-de42ba0495a1'])
+data = cur.fetchone()
+audio_path = f"C:/Program Files/FreeSWITCH/sounds/en/us/callie/{data[0]}"
+pay_date = data[1]
+all_scripts = cur.execute(sql.SQL("SELECT id, text FROM script"))
+
+
+main_func('recordings/dad7911a-2d9c-4c5e-a3bf-de42ba0495a1_response.wav', all_scripts)
