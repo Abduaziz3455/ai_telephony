@@ -69,6 +69,7 @@ class GetCampaign(BaseModel):
 class GetCall(BaseModel):
     id: int
     phone: str
+    paymentDate: str = ''
     campaignName: str
     status: str = 'PENDING'
     recording: str
