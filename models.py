@@ -50,7 +50,6 @@ def process_user_query(text: str, responses: list, today_date: str = "2024-08-25
     # Create an output parser with the combined schema
     output_parser = StructuredOutputParser.from_response_schemas(schemas)
     format_instructions = output_parser.get_format_instructions()
-
     # Create a formatted string for responses context
     responses_context = "\n".join([f"ID: {resp[0]}, Response: {resp[1]}" for resp in responses])
 
@@ -85,11 +84,10 @@ def process_user_query(text: str, responses: list, today_date: str = "2024-08-25
 
 def main_func(audio_path, scripts):
     # Load the CSV data
-    transcription = send_stt_request(f"C:/Program Files/FreeSWITCH/sounds/en/us/callie/{audio_path}")
-    print(transcription)
+    transcription = send_stt_request(audio_path)
     if transcription:
-        date = "2024-08-30"
-        weekday = "friday"
+        date = "2024-08-31"
+        weekday = "saturday"
         user_response = process_user_query(transcription, scripts, today_date=date, week_day=weekday)
         if "error" not in user_response:
             return user_response
@@ -97,20 +95,3 @@ def main_func(audio_path, scripts):
             return None
     else:
         return None
-
-import psycopg2
-from psycopg2 import sql
-
-conn = psycopg2.connect(dbname="robot_call", user="postgres", password="abdu3421", host="127.0.0.1",
-                        port="5432")
-# Create a cursor object
-cur = conn.cursor()
-# Retrieve columns of the table using the UUID
-cur.execute(sql.SQL("SELECT voice, paydate FROM voicehistory WHERE uuid = %s"), ['dad7911a-2d9c-4c5e-a3bf-de42ba0495a1'])
-data = cur.fetchone()
-audio_path = f"C:/Program Files/FreeSWITCH/sounds/en/us/callie/{data[0]}"
-pay_date = data[1]
-all_scripts = cur.execute(sql.SQL("SELECT id, text FROM script"))
-
-
-main_func('recordings/dad7911a-2d9c-4c5e-a3bf-de42ba0495a1_response.wav', all_scripts)

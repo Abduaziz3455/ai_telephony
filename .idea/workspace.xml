@@ -4,23 +4,50 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="48274bd9-cec4-4928-abef-95b6d75c8d53" name="Changes" comment="lua file">
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/alembic/env.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sip_call.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sip_call.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="48274bd9-cec4-4928-abef-95b6d75c8d53" name="Changes" comment="call chain added">
+      <change afterPath="$PROJECT_DIR$/generate_audio.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analyze_audio.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/call_number.lua" beforeDir="false" afterPath="$PROJECT_DIR$/call_number.lua" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/data.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/db/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gpt_model.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mohirai_model.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/robo_call_v2/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/robo_call_v2.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/combined_audio.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/1.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/10.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/11.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/12.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/13.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/14.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/15.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/16.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/17.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/18.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/19.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/2.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/20.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/3.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/4.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/5.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/6.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/7.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/8.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/mp4a/9.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/numbers_audio/Asosiy.m4a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/numbers_audio/ikki.m4a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/numbers_audio/million.m4a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/numbers_audio/ming.m4a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/numbers_audio/o'ttiz.m4a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/numbers_audio/to'rt.m4a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/numbers_audio/yuz.m4a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/test_audio.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/robo_call_v2/video_to_audio.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/script.csv" beforeDir="false" afterPath="$PROJECT_DIR$/script.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,43 +106,44 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;FastAPI.AI_telephony.executor&quot;: &quot;Run&quot;,
-    &quot;FastAPI.ai_telephony.executor&quot;: &quot;Run&quot;,
-    &quot;FastAPI.robot_call.executor&quot;: &quot;Run&quot;,
-    &quot;Python.analyze_audio.executor&quot;: &quot;Run&quot;,
-    &quot;Python.audio_convert.executor&quot;: &quot;Run&quot;,
-    &quot;Python.client_name_voice.executor&quot;: &quot;Run&quot;,
-    &quot;Python.df_test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.gpt_model.executor&quot;: &quot;Run&quot;,
-    &quot;Python.models.executor&quot;: &quot;Run&quot;,
-    &quot;Python.mohirai_model.executor&quot;: &quot;Run&quot;,
-    &quot;Python.prompt_maker.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_audio.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;database.data.extractors.current.export.id&quot;: &quot;Comma-separated (CSV)_id&quot;,
-    &quot;database.data.extractors.current.id&quot;: &quot;JSON-Groovy.json.groovy&quot;,
-    &quot;deletionFromPopupRequiresConfirmation&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;test&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Abdua/OneDrive/Рабочий стол/ai_telephony/alembic&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "FastAPI.AI_telephony.executor": "Run",
+    "FastAPI.ai_telephony.executor": "Run",
+    "FastAPI.robot_call.executor": "Run",
+    "Python.analyze_audio.executor": "Run",
+    "Python.audio_convert.executor": "Run",
+    "Python.client_name_voice.executor": "Run",
+    "Python.df_test.executor": "Run",
+    "Python.generate_audio.executor": "Run",
+    "Python.gpt_model.executor": "Run",
+    "Python.models.executor": "Run",
+    "Python.mohirai_model.executor": "Run",
+    "Python.prompt_maker.executor": "Run",
+    "Python.test.executor": "Run",
+    "Python.test_audio.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "database.data.extractors.current.export.id": "Comma-separated (CSV)_id",
+    "database.data.extractors.current.id": "JSON-Groovy.json.groovy",
+    "deletionFromPopupRequiresConfirmation": "false",
+    "git-widget-placeholder": "test",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Users/Abdua/OneDrive/Рабочий стол/ai_telephony/alembic",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;postgresql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Abdua\OneDrive\Рабочий стол\ai_telephony\alembic" />
@@ -173,6 +201,29 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="generate_audio" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="sip_call" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/generate_audio.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="models" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="sip_call" />
       <option name="ENV_FILES" value="" />
@@ -188,29 +239,6 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/models.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="mohirai_model" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="sip_call" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/mohirai_model.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -261,11 +289,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.models" />
-        <item itemvalue="Python.analyze_audio" />
         <item itemvalue="Python.test" />
+        <item itemvalue="Python.generate_audio" />
+        <item itemvalue="Python.analyze_audio" />
+        <item itemvalue="Python.models" />
         <item itemvalue="Python.client_name_voice" />
-        <item itemvalue="Python.mohirai_model" />
       </list>
     </recent_temporary>
   </component>
@@ -302,7 +330,7 @@
       <workItem from="1724983570009" duration="161000" />
       <workItem from="1724984176173" duration="216000" />
       <workItem from="1725027832638" duration="11843000" />
-      <workItem from="1725077321152" duration="496000" />
+      <workItem from="1725077321152" duration="8287000" />
     </task>
     <task id="LOCAL-00001" summary="first message">
       <option name="closed" value="true" />
@@ -416,7 +444,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724984374996</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="call chain added">
+      <option name="closed" value="true" />
+      <created>1725078057464</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1725078057464</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -447,19 +483,21 @@
     <MESSAGE value="voiceHistory added" />
     <MESSAGE value=".env" />
     <MESSAGE value="lua file" />
-    <option name="LAST_COMMIT_MESSAGE" value="lua file" />
+    <MESSAGE value="call chain added" />
+    <option name="LAST_COMMIT_MESSAGE" value="call chain added" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/ai_telephony$audio_convert.coverage" NAME="audio_convert Coverage Results" MODIFIED="1724310595415" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/ai_telephony$AI_telephony.coverage" NAME="AI_telephony Coverage Results" MODIFIED="1724513962258" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/ai_telephony$df_test.coverage" NAME="gpt_model Coverage Results" MODIFIED="1724574429873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/client_name_voice_py$analyze_audio.coverage" NAME="analyze_audio Coverage Results" MODIFIED="1725039915003" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/Downloads/analyze" />
+    <SUITE FILE_PATH="coverage/client_name_voice_py$analyze_audio.coverage" NAME="analyze_audio Coverage Results" MODIFIED="1725079374449" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/Downloads/analyze" />
     <SUITE FILE_PATH="coverage/ai_telephony$mohirai_model.coverage" NAME="mohirai_model Coverage Results" MODIFIED="1724576266199" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/client_name_voice_py$models.coverage" NAME="models Coverage Results" MODIFIED="1725043548738" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/client_name_voice_py$AI_telephony.coverage" NAME="AI_telephony Coverage Results" MODIFIED="1725044101545" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/client_name_voice_py$models.coverage" NAME="models Coverage Results" MODIFIED="1725078808235" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/client_name_voice_py$AI_telephony.coverage" NAME="AI_telephony Coverage Results" MODIFIED="1725085636013" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/ai_telephony$test_audio.coverage" NAME="test_audio Coverage Results" MODIFIED="1724313457602" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/robo_call_v2" />
     <SUITE FILE_PATH="coverage/ai_telephony$client_name_voice.coverage" NAME="client_name_voice Coverage Results" MODIFIED="1724606149852" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/ai_telephony$prompt_maker.coverage" NAME="prompt_maker Coverage Results" MODIFIED="1724515870798" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/client_name_voice_py$test.coverage" NAME="test Coverage Results" MODIFIED="1725038743303" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/client_name_voice_py$generate_audio.coverage" NAME="generate_audio Coverage Results" MODIFIED="1725083031466" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/client_name_voice_py$test.coverage" NAME="test Coverage Results" MODIFIED="1725085336847" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
