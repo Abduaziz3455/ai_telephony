@@ -1,6 +1,6 @@
-import logging
+import datetime
 
-import requests
+import speech_recognition as sr
 from dotenv import load_dotenv
 from environs import Env
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
@@ -13,30 +13,20 @@ env = Env()
 env.read_env()
 
 
-def send_stt_request(path):
-    url = 'https://uzbekvoice.ai/api/v1/stt'
-    headers = {"Authorization": env.str("MOHIRAI_TOKEN")}
-    data = {"return_offsets": "false", "run_diarization": "false", "blocking": "true", "language": "ru-uz"}
-
-    files = {"file": ("audio.wav", open(path, "rb"))}
-
-    try:
-        response = requests.post(url, headers=headers, files=files, data=data)
-        if response.status_code == 200:
-            print("Yuborildii")
-            javob = response.json()['result']['text']
-            print("Response: {}".format(javob))
-            return javob
-        else:
-            logging.error(response.text)
-            logging.error('Mohirai error in initial request')
+def send_stt_request(path, lang='uz'):
+    r = sr.Recognizer()
+    with sr.AudioFile(path) as source:
+        # r.adjust_for_ambient_noise(source, duration=0.2)
+        audio = r.record(source)
+        langs = {'uz': 'uz-UZ', 'ru': 'ru-RU'}
+        try:
+            text = r.recognize_google(audio, language=langs[lang])
+            text = text.lower()
+            return text
+        except sr.RequestError as e:
             return None
-    except requests.exceptions.Timeout:
-        logging.error('Timeout in initial request')
-        return None
-    except Exception as e:
-        logging.error(f'Error in initial request: {e}')
-        return None
+        except sr.UnknownValueError:
+            return None
 
 
 # Define a single function that handles both response ID extraction and payment date extraction
@@ -82,12 +72,21 @@ def process_user_query(text: str, responses: list, today_date: str = "2024-08-25
         return {"error": str(e)}
 
 
+def get_today_date_and_weekday():
+    # Get today's date
+    today = datetime.date.today()
+    # Format the date as YYYY-MM-DD
+    d = today.strftime("%Y-%m-%d")
+    # Get the weekday name (e.g., "Monday")
+    w = today.strftime("%A")
+    return d, w
+
+
 def main_func(audio_path, scripts):
     # Load the CSV data
-    transcription = send_stt_request(audio_path)
+    transcription = send_stt_request(audio_path, lang='uz')
     if transcription:
-        date = "2024-08-31"
-        weekday = "saturday"
+        date, weekday = get_today_date_and_weekday()
         user_response = process_user_query(transcription, scripts, today_date=date, week_day=weekday)
         if "error" not in user_response:
             return user_response
