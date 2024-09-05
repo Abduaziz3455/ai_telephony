@@ -32,10 +32,11 @@ def send_stt_request(path, lang='uz'):
 # Define a single function that handles both response ID extraction and payment date extraction
 def process_user_query(text: str, responses: list, today_date: str = "2024-08-25", week_day: str = "sunday"):
     # Define a schema for extracting both response ID and payment date
-    schemas = [ResponseSchema(name="ID", description="The ID of the exact matching response. Options: from 0 to 8",
-                              type='number'), ResponseSchema(name="Payment_Date",
-                                                             description="The exact date when the user intends to make a payment, in dd-mm format",
-                                                             type="string")]
+    schemas = [
+        ResponseSchema(name="ID", description="The ID of the exact matching response. Options: from 0 to 8", type='number'),
+        ResponseSchema(name="Payment_Date", description="The exact date when the user intends to make a payment, in dd-mm format", type="string"),
+        ResponseSchema(name="Reason", description="The reason provided by the user for not paying the debt", type="string")
+    ]
 
     # Create an output parser with the combined schema
     output_parser = StructuredOutputParser.from_response_schemas(schemas)
@@ -44,18 +45,17 @@ def process_user_query(text: str, responses: list, today_date: str = "2024-08-25
     responses_context = "\n".join([f"ID: {resp[0]}, Response: {resp[1]}" for resp in responses])
 
     # Define a combined prompt template
-    prompt = PromptTemplate(template=("You are an expert in handling natural language queries for debt collection. "
-                                      "Analyze the given Uzbek text to perform the following tasks:\n"
-                                      "1. Select the most appropriate response ID from the list below based on the user's query about debt payment.\n"
-                                      "2. Extract the specific date when the user intends to make a payment. Convert relative dates like 'bugun' (today), 'ertaga' (tomorrow), 'kecha' (yesterday), "
-                                      "'oyning oxiriga qadar' (by the end of the month), 'haftani boshida' (at the beginning of the week), and similar expressions "
-                                      "into exact dates using today's date ({today_date}) and week day ({week_day}). Only extract the first relevant date that is directly related to the user's intention to pay a debt, in 'dd-mm' format.\n"
-                                      "If no date is found, return an empty string.\n"
-                                      "Responses:\n{responses_context}\n"
-                                      "{format_instructions}\nQuery: {text}"),
-                            input_variables=["text", "today_date", "week_day"],
-                            partial_variables={"format_instructions": format_instructions,
-                                               "responses_context": responses_context})
+    prompt = PromptTemplate(template=(
+        "As a debt collection expert, analyze the following Uzbek text. Perform these tasks:\n"
+        "1. Identify the most appropriate response ID from the list based on the user's debt payment query.\n"
+        "2. Extract the exact payment date mentioned by the user. Convert relative dates (e.g., 'bugun' for today, 'ertaga' for tomorrow) "
+        "into 'dd-mm' format, based on today's date ({today_date}) and the day of the week ({week_day}).\n"
+        "3. Extract the reason why the user may not intend to pay the debt, if mentioned.\n"
+        "If no date or reason is provided, return an empty string.\n"
+        "Responses:\n{responses_context}\n"
+        "{format_instructions}\nQuery: {text}"
+    ), input_variables=["text", "today_date", "week_day"], 
+    partial_variables={"format_instructions": format_instructions, "responses_context": responses_context})
 
     # Initialize the language model
     chat_model = ChatOpenAI(model='gpt-4o-mini', temperature=0.2)
