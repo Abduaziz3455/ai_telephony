@@ -4,8 +4,7 @@ from datetime import timedelta
 from faker import Faker
 from sqlalchemy.orm import Session
 
-from db.models import Sip, CampaignStatus, Campaign, CallHistory, CallStatus, Script
-from db.session import get_db
+from db.models import Sip, CampaignStatus, Campaign, CallHistory, CallStatus
 
 fake = Faker()
 

@@ -67,6 +67,7 @@ class Script(Base):
     id = Column(Integer, primary_key=True)
     text = Column(String)
     voice = Column(String)
+    lang = Column(String, default='uz', nullable=True)
 
 
 class Campaign(Base):

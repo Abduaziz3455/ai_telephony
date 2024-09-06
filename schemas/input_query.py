@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, constr
 
@@ -68,11 +68,12 @@ class GetCampaign(BaseModel):
 
 class GetCall(BaseModel):
     id: int
+    clientName: str
     phone: str
     paymentDate: str = ''
+    reason: str = ''
     campaignName: str
     status: str = 'PENDING'
-    recording: str
     duration: int
     startDate: str
 

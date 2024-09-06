@@ -15,3 +15,5 @@ psycopg2-binary
 pandas
 openpyxl
 python-multipart
+passlib
+PyJWT

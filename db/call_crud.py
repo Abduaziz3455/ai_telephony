@@ -89,10 +89,10 @@ def get_target_calls(df):
 
 def get_calls(db: Session):
     query = db.query(CallHistory).order_by(desc(CallHistory.id)).all()
-    calls = [GetCall(id=call.id, phone=call.phone,
+    calls = [GetCall(id=call.id, phone=call.phone, clientName=call.client_name,
                      paymentDate=db.query(VoiceHistory).filter(VoiceHistory.calluuid == call.uuid).first().paydate if db.query(VoiceHistory).filter(VoiceHistory.calluuid == call.uuid).first() else '',
+                     reason=db.query(VoiceHistory).filter(VoiceHistory.calluuid == call.uuid).first().reason if db.query(VoiceHistory).filter(VoiceHistory.calluuid == call.uuid).first() else '',
                      campaignName=get_campaign(db, call.campaign_uuid).name,
-                     status=call.status, recording=call.recording if call.recording else '',
-                     duration=call.duration if call.duration else 0,
+                     status=call.status, duration=call.duration if call.duration else 0,
                      startDate=call.startDate.strftime("%d.%m.%Y %H:%M") if call.startDate else '') for call in query]
     return calls

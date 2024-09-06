@@ -37,14 +37,15 @@ def analyze_audio(uuid):
         else:
             user_resp = main_func(audio_path, all_scripts)
             if user_resp:
-                query = "UPDATE voicehistory SET resvoice = %s, paydate = %s, scriptid = %s WHERE uuid = %s"
+                query = "UPDATE voicehistory SET resvoice = %s, paydate = %s, reason = %s, scriptid = %s WHERE uuid = %s"
                 script_id = user_resp['ID']
                 date = user_resp['Payment_Date']
+                reason = user_resp['Reason']
                 cur.execute(sql.SQL("SELECT voice FROM script WHERE id = %s"), [script_id])
                 script_path = f"{env.str('SCRIPT_PATH')}{cur.fetchone()[0]}"
                 # Update a column in the table based on the UUID
                 update_query = sql.SQL(query)
-                cur.execute(update_query, (script_path, date, script_id, uuid))
+                cur.execute(update_query, (script_path, date, reason, script_id, uuid))
             else:
                 print("Response qaytmadi!!!")
         # Commit the transaction
