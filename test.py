@@ -69,11 +69,12 @@ engine = create_engine(f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT
 
 # Load CSV data into a DataFrame
 df = pd.read_csv('script.csv')
-
+df2 = pd.read_csv('scripts_ru.csv')
 # Define the table name where data will be inserted
 table_name = 'script'
 
 # Insert data into the PostgreSQL table
 df.to_sql(table_name, engine, if_exists='append', index=False)
+df2.to_sql(table_name, engine, if_exists='append', index=False)
 
 print(f'Data successfully inserted into table {table_name}')

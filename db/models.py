@@ -16,6 +16,11 @@ class CampaignStatus(Enum):
     ERROR_OCCURRED = "ERROR_OCCURRED"
 
 
+class Langs(Enum):
+    uz = "uz"
+    ru = "ru"
+
+
 class CallStatus(Enum):
     PENDING = "PENDING"  # will be active soon
     RINGING = "RINGING"  # call going on
@@ -74,6 +79,7 @@ class Campaign(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String, unique=True)
     name = Column(String)
+    lang = Column(SqlEnum(Langs), nullable=False, default=Langs.uz)
     audio = Column(String)
     audio_duration = Column(Integer, nullable=True)
     retryCount = Column(Integer, default=0)

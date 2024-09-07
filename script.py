@@ -48,7 +48,8 @@ async def update_and_send(db, call, status, recording=None, duration=None):
 async def call_number(db: Session, sip: GetSip, call: CallHistory, number: str, audioPath: str,
                       retryTime: int, UUID: str):
     # Construct the command
-    command = f'fs_cli -x "luarun call_number.lua {sip.uuid} {sip.username} {number} {audioPath} {retryTime} {UUID}"'
+    lang = get_campaign(db, call.campaign_uuid).lang.value
+    command = f'fs_cli -x "luarun call_number.lua {sip.uuid} {sip.username} {number} {lang} {retryTime} {UUID}"'
     try:
         if call.status.value == 'PENDING':
             # Execute the command and capture the output

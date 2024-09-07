@@ -46,6 +46,7 @@ class CampaignInput(BaseModel):
     retryCount: int = 3
     sip_uuid: str = 'uztel'
     channelCount: int = 1
+    lang: str = 'uz'
 
     class Config:
         from_attributes = True
@@ -54,6 +55,7 @@ class CampaignInput(BaseModel):
 class GetCampaign(BaseModel):
     uuid: str
     name: str
+    lang: str
     audio_duration: int
     retryCount: int = 3
     sip_name: str

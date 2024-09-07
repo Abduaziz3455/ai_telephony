@@ -25,18 +25,18 @@ def get_campaigns(db: Session, active=False):
     ret_camps = []
     for camp in camps:
         ret_camps.append(
-            GetCampaign(uuid=camp.uuid, name=camp.name, audio_duration=camp.audio_duration, retryCount=camp.retryCount,
+            GetCampaign(uuid=camp.uuid, name=camp.name, lang=camp.lang, audio_duration=camp.audio_duration, retryCount=camp.retryCount,
                         sip_name=get_sip(db, camp.sip_uuid).name, channelCount=camp.channelCount, status=camp.status,
                         startDate=camp.startDate.strftime("%d.%m.%Y %H:%M") if camp.startDate else '',
                         endDate=camp.endDate.strftime("%d.%m.%Y %H:%M") if camp.endDate else ''))
     return ret_camps
 
 
-def create_campaign(db: Session, uuid: str, name: str, audio: str, channelCount: int, sip_uuid: str,
+def create_campaign(db: Session, uuid: str, name: str, audio: str, channelCount: int, sip_uuid: str, lang: str,
                     duration: int = None,
                     retryCount: int = 0):
     db_camp = Campaign(uuid=uuid, name=name, audio=audio, retryCount=retryCount, channelCount=channelCount,
-                       sip_uuid=sip_uuid, audio_duration=duration)
+                       sip_uuid=sip_uuid, audio_duration=duration, lang=lang)
     try:
         db.add(db_camp)
         db.commit()

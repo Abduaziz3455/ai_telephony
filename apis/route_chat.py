@@ -173,11 +173,12 @@ async def send_response(db, query, query_uuid, audio_path: str, sip, df):
     if duration:
         campaign = create_campaign(db=db, uuid=query_uuid, name=query.name, audio=audio_path,
                                    retryCount=query.retryCount,
-                                   channelCount=query.channelCount, sip_uuid=sip.uuid, duration=duration)
+                                   channelCount=query.channelCount, sip_uuid=sip.uuid, duration=duration,
+                                   lang=query.lang)
     else:
         campaign = create_campaign(db=db, uuid=query_uuid, name=query.name, audio=audio_path,
                                    retryCount=query.retryCount,
-                                   channelCount=query.channelCount, sip_uuid=sip.uuid)
+                                   channelCount=query.channelCount, sip_uuid=sip.uuid, lang=query.lang)
     calls = []
     df['phone'] = df['phone'].astype(str)
     targets = get_target_calls(df)
@@ -205,12 +206,13 @@ async def send_response(db, query, query_uuid, audio_path: str, sip, df):
 @router.post("/campaign")
 async def send_message(
         background_tasks: BackgroundTasks,
-        name: str = Form("Debt notice"),  # Default value set to 'Debt notice'
-        audio: str = Form("https://storage.yandexcloud.net/myaudios/ai_telephony/3.wav"),  # Default audio URL
-        retryCount: int = Form(3),  # Default retry count
-        sip_uuid: str = Form("uztel"),  # Default SIP UUID
-        channelCount: int = Form(1),  # Default channel count
-        file: UploadFile = File(...),  # File upload, no default as it is required
+        name: str = Form("Debt notice"),
+        audio: str = Form("https://storage.yandexcloud.net/myaudios/ai_telephony/3.wav"),
+        lang: str = Form('uz'),
+        retryCount: int = Form(3),
+        sip_uuid: str = Form("uztel"),
+        channelCount: int = Form(1),
+        file: UploadFile = File(...),
         db: Session = Depends(get_db)
 ):
     # You can now access the form data and file upload
@@ -220,6 +222,7 @@ async def send_message(
         retryCount=retryCount,
         sip_uuid=sip_uuid,
         channelCount=channelCount,
+        lang=lang
     )
     try:
         sip = get_sip(db, query.sip_uuid)

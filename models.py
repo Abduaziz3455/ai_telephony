@@ -7,6 +7,7 @@ from environs import Env
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
+import speech_recognition as sr
 
 load_dotenv()
 
@@ -18,13 +19,13 @@ def send_stt_request(path):
     url = 'https://uzbekvoice.ai/api/v1/stt'
     headers = {"Authorization": env.str("MOHIRAI_TOKEN")}
     data = {"return_offsets": "false", "run_diarization": "false", "blocking": "true", "language": "ru-uz"}
-
+    print(path)
     files = {"file": ("audio.wav", open(path, "rb"))}
 
     try:
         response = requests.post(url, headers=headers, files=files, data=data)
         if response.status_code == 200:
-            print("Yuborildii")
+            print(response.json())
             javob = response.json()['result']['text']
             print("Response: {}".format(javob))
             return javob
@@ -38,6 +39,24 @@ def send_stt_request(path):
     except Exception as e:
         logging.error(f'Error in initial request: {e}')
         return None
+
+
+def rus_stt(path):
+    r = sr.Recognizer()
+    with sr.AudioFile(path) as source:
+        audio = r.record(source)
+        try:
+            text = r.recognize_google(audio, language='ru-RU')
+            text = text.lower()
+            # Explicitly encode and decode text to handle potential encoding issues
+            text = text.encode('utf-8')
+            return text
+        except sr.RequestError as e:
+            print(f"Request error: {e}")
+            return None
+        except sr.UnknownValueError:
+            print("Unknown value error")
+            return None
 
 
 # Define a single function that handles both response ID extraction and payment date extraction
@@ -57,7 +76,7 @@ def process_user_query(text: str, responses: list, today_date: str = "2024-08-25
 
     # Define a combined prompt template
     prompt = PromptTemplate(template=(
-        "As a debt collection expert, analyze the following Uzbek text. Perform these tasks:\n"
+        "As a debt collection expert, analyze the following Uzbek(Russian) text. Perform these tasks:\n"
         "1. Identify the most appropriate response ID from the list based on the user's debt payment query.\n"
         "2. Extract the exact payment date mentioned by the user. Convert relative dates (e.g., 'bugun' for today, 'ertaga' for tomorrow) "
         "into 'dd-mm' format, based on today's date ({today_date}) and the day of the week ({week_day}).\n"
@@ -93,9 +112,13 @@ def get_today_date_and_weekday():
     return d, w
 
 
-def main_func(audio_path, scripts):
+def main_func(audio_path, scripts, lang):
     # Load the CSV data
-    transcription = send_stt_request(audio_path)
+    if lang == 'uz':
+        transcription = send_stt_request(audio_path)
+    else:
+        transcription = rus_stt(audio_path)
+    print(transcription)
     if transcription:
         date, weekday = get_today_date_and_weekday()
         user_response = process_user_query(transcription, scripts, today_date=date, week_day=weekday)
